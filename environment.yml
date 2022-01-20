@@ -1,0 +1,19 @@
+name: peekingduck
+channels:
+  - defaults
+dependencies:
+  - pip=21.2.2
+  - python=3.8.12
+  - pip:
+    - click==7.1.2
+    - colorama==0.4.4
+    - cookiecutter==1.7.3
+    - numpy==1.17.3
+    - opencv-python
+    - peekingduck==1.1.1
+    - pyyaml==6.0
+    - requests==2.24.0
+    - scipy==1.4.1
+    - tensorflow==2.2.0
+    - tqdm==4.45.0
+prefix: C:\Users\KNT77\Anaconda3\envs\peekingduck
