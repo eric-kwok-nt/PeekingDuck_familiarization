@@ -1,5 +1,12 @@
 nodes:
-- input.live
-- model.yolo
+- input.live:
+    input_source: 1
+- model.posenet:
+    model_type: 'resnet' 
+    score_threshold: 0.4
+
+- custom_nodes.dabble.dab_recognition
 - draw.bbox
+- draw.tag
+- draw.poses
 - output.screen

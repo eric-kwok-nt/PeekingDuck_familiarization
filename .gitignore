@@ -88,4 +88,5 @@ target/
 # Mypy cache
 .mypy_cache/
 
+# Other files
 *.docx

@@ -1,0 +1,27 @@
+# Mandatory configs
+input: ["img", "bboxes", "keypoints", "keypoint_conns", "keypoint_scores"]
+output: ["img", "bboxes", "keypoints", "keypoint_conns", "keypoint_scores", "obj_tags"]
+
+# Optional configs depending on node
+keypoints_id:
+  nose: 0
+  left_eye: 1
+  right_eye: 2
+  left_shoulder: 5
+  right_shoulder: 6
+  left_elbow: 7
+  right_elbow: 8
+  left_wrist: 9
+  right_wrist: 10
+
+thresholds:
+  straight_arm: 0.8       # [0, 1] -> 1 means arm fully extended
+  bent_arm: 0.4           # [0, 1] -> 1 means wrist is touching shoulder. Default 0.5 (60 degrees)
+  head_wrist: 0.4         # [0, 1] -> 1 means distance between nose/left/right_eyes and wrist/elbow is same distance as upper arm length
+  lower_arm_parallel: 0.8 # [0, 1] -> 1 means lower arms are parallel to each other
+
+score_weightage: # Recommended to sum to one
+  straight_arm: 0.25
+  bent_arm: 0.25
+  head_wrist: 0.25
+  lower_arm_parallel: 0.25
