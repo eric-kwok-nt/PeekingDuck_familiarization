@@ -1,6 +1,6 @@
 # Mandatory configs
-input: ["img", "bboxes", "keypoints", "keypoint_conns", "keypoint_scores"]
-output: ["img", "bboxes", "keypoints", "keypoint_conns", "keypoint_scores", "obj_tags"]
+input: ["keypoints"]
+output: ["obj_tags"]
 
 # Optional configs depending on node
 keypoints_id:

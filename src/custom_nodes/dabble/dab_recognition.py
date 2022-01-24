@@ -4,7 +4,6 @@ from peekingduck.pipeline.nodes.node import AbstractNode
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-import cv2
 import pdb
 
 
@@ -25,35 +24,26 @@ class Node(AbstractNode):
         self._normalize_scores()
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
+        """This node does dab detection.
 
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys "keypoints".
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): Dictionary with keys "obj_tags".
         """
-        img = inputs['img']
-        bboxes = inputs['bboxes']
         keypoints = inputs['keypoints']
-        keypoint_scores = inputs['keypoint_scores']
-        keypoint_conns = inputs['keypoint_conns']
-        is_dab_list = ['Waiting...' for _ in bboxes]
-        for i, _ in enumerate(bboxes):
-            # row, col, _ = img.shape
-            # key = self.keypoints_id['left_shoulder']
-            # cv2.putText(
-            #     img,'right shoulder',(int(keypoints[i][key][0]*col), int(keypoints[i][key][1]*row)), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),1,cv2.LINE_AA
-            #     )
-            left_wrist = keypoints[i][self.keypoints_id['left_wrist']]
-            right_wrist = keypoints[i][self.keypoints_id['right_wrist']]
-            left_elbow = keypoints[i][self.keypoints_id['left_elbow']]
-            right_elbow = keypoints[i][self.keypoints_id['right_elbow']]
-            left_shoulder = keypoints[i][self.keypoints_id['left_shoulder']]
-            right_shoulder = keypoints[i][self.keypoints_id['right_shoulder']]
-            self.nose = keypoints[i][self.keypoints_id['nose']]
-            self.left_eye = keypoints[i][self.keypoints_id['left_eye']]
-            self.right_eye = keypoints[i][self.keypoints_id['right_eye']]
+        is_dab_list = ['Waiting...' for _ in keypoints]
+        for i, keypoint in enumerate(keypoints):
+            left_wrist = keypoint[self.keypoints_id['left_wrist']]
+            right_wrist = keypoint[self.keypoints_id['right_wrist']]
+            left_elbow = keypoint[self.keypoints_id['left_elbow']]
+            right_elbow = keypoint[self.keypoints_id['right_elbow']]
+            left_shoulder = keypoint[self.keypoints_id['left_shoulder']]
+            right_shoulder = keypoint[self.keypoints_id['right_shoulder']]
+            self.nose = keypoint[self.keypoints_id['nose']]
+            self.left_eye = keypoint[self.keypoints_id['left_eye']]
+            self.right_eye = keypoint[self.keypoints_id['right_eye']]
             
             if not (self._are_keypoints_present(
                 left_wrist, right_wrist, left_elbow, right_elbow, left_shoulder, right_shoulder
@@ -88,11 +78,6 @@ class Node(AbstractNode):
                         is_dab_list[i] = f"Dab Detected! Score: {total_score:.2f}"
 
         outputs = {
-            "img": img,
-            "bboxes": bboxes,
-            "keypoints": keypoints,
-            "keypoint_conns": keypoint_conns,
-            "keypoint_scores": keypoint_scores,
             "obj_tags": is_dab_list
         }
 
@@ -101,6 +86,16 @@ class Node(AbstractNode):
     def _is_straight_arm(
         self, lower_arm_vec: np.ndarray, elbow: List[float], shoulder: List[float]
         ) -> Tuple[float, bool]:
+        """This method checks if the arm is straight
+
+        Args:
+            lower_arm_vec (np.ndarray): Vector of lower arm from elbow to wrist [float, float]
+            elbow (List[float]): Coordinates of the elbow position [1x2]
+            shoulder (List[float]): Coordinates of the shoulder position [1x2]
+
+        Returns:
+            Tuple[float, bool]: Outputs the score of how straight the arm is, and False if it is below threshold
+        """
         upper_arm_vec = [elbow - shoulder]
         straight_score = cosine_similarity([lower_arm_vec], upper_arm_vec).ravel()[0]
         if straight_score >= self.thresholds['straight_arm']:
@@ -111,6 +106,16 @@ class Node(AbstractNode):
     def _is_bent_arm(
         self, lower_arm_vec: np.ndarray, elbow: List[float], shoulder: List[float]
     ) -> Tuple[float, bool]:
+        """This method checks if the arm is bent
+
+        Args:
+            lower_arm_vec (np.ndarray): Vector of lower arm from elbow to wrist [float, float]
+            elbow (List[float]): Coordinates of the elbow position [1x2]
+            shoulder (List[float]): Coordinates of the shoulder position [1x2]
+
+        Returns:
+            Tuple[float, bool]: Outputs the score of the extend of arm bending, and False if it is below threshold
+        """
         upper_arm_vec = [shoulder - elbow]
         bent_score = cosine_similarity([lower_arm_vec], upper_arm_vec).ravel()[0]
         if bent_score >= self.thresholds['bent_arm']:
@@ -121,7 +126,15 @@ class Node(AbstractNode):
     def _is_head_close_to_wrist_or_elbow(
         self, wrist: List[float], elbow: List[float]
     ) -> float:
+        """This method checks if the eyes or nose is close to the wrist or elbow
 
+        Args:
+            wrist (List[float]): Coordinates of the wrist position [1x2]
+            elbow (List[float]): Coordinates of the elbow position [1x2]
+
+        Returns:
+            float: Outputs the score of how close the eyes or nose is to the wrist or arm, and False if it is below threshold
+        """
         lower_arm_len = np.linalg.norm(wrist-elbow)
         items_to_check = [self.nose, self.left_eye, self.right_eye]
         head_arm_score = 0
@@ -136,6 +149,11 @@ class Node(AbstractNode):
         return head_arm_score
 
     def _are_lowerarms_parallel(self) -> Tuple[float, bool]:
+        """This method checks if the lower arms are parallel
+
+        Returns:
+            Tuple[float, bool]: Outputs the score of how parallel the lower arms to each other, and False if it is below threshold
+        """
         parallel_score = cosine_similarity([self.lower_left_arm_vec], [self.lower_right_arm_vec]).ravel()[0]
         if parallel_score >= self.thresholds['lower_arm_parallel']:
             return parallel_score
@@ -144,6 +162,20 @@ class Node(AbstractNode):
     def _are_keypoints_present(
         self, left_wrist,right_wrist, left_elbow, right_elbow, left_shoulder, right_shoulder
         ) -> bool:
+        """Checks whether the keypoints are detected
+
+        Args:
+            left_wrist (np.ndarray): Coordinate of left_wrist [1x2]
+            right_wrist (np.ndarray): Coordinate of right_wrist [1x2]
+            left_elbow (np.ndarray): Coordinate of left_elbow [1x2]
+            right_elbow (np.ndarray): Coordinate of right_elbow [1x2]
+            left_shoulder (np.ndarray): Coordinate of left_shoulder [1x2]
+            right_shoulder (np.ndarray): Coordinate of right_shoulder [1x2]
+
+        Returns:
+            bool: Outputs True if left_wrist, right_wrist, left_elbow, right_elbow, left_shoulder, right_shoulder are all present, 
+                and either nose or left_eye or right_eye are present
+        """
         return (
             (left_wrist == [-1.,-1.]).all() or
             (right_wrist == [-1.,-1.]).all() or
@@ -159,6 +191,8 @@ class Node(AbstractNode):
         )
     
     def _normalize_scores(self):
+        """Normalizes the score weightage to sum of 1
+        """
         total = 0
         for k, v in self.score_weightage.items():
             total += v
