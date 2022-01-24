@@ -1,0 +1,20 @@
+nodes:
+- input.recorded:
+    input_dir: "data/raw/video1.mp4"
+    threading: True
+    buffer_frames: True
+
+- model.posenet:
+    model_type: 'resnet' 
+    score_threshold: 0.4
+
+- custom_nodes.dabble.dab_recognition
+# - draw.legend:
+#     all_legend_items: ["fps"]   # ["fps", "count", "zone_count"]
+#     position: "top"          # {"top", "bottom"}
+#     include: ["all_legend_items"]
+- draw.bbox
+- draw.tag
+- draw.poses
+- output.media_writer:
+    output_dir: "data/processed/"

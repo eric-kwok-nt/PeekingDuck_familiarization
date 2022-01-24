@@ -1,0 +1,18 @@
+nodes:
+- input.live:
+    input_source: 1
+    threading: True
+
+- model.posenet:
+    model_type: 'resnet' 
+    score_threshold: 0.4
+
+- custom_nodes.dabble.dab_recognition
+# - draw.legend:
+#     all_legend_items: ["fps"]   # ["fps", "count", "zone_count"]
+#     position: "top"          # {"top", "bottom"}
+#     include: ["all_legend_items"]
+- draw.bbox
+- draw.tag
+- draw.poses
+- output.screen
