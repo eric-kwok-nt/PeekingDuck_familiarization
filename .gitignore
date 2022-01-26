@@ -90,3 +90,5 @@ target/
 
 # Other files
 *.docx
+*.pptx
+test.md

@@ -16,8 +16,8 @@ keypoints_id:
 
 thresholds:
   straight_arm: 0.8       # [0, 1] -> 1 means arm fully extended
-  bent_arm: 0.4           # [0, 1] -> 1 means wrist is touching shoulder. Default 0.5 (60 degrees)
-  head_wrist: 0.4         # [0, 1] -> 1 means distance between nose/left/right_eyes and wrist/elbow is same distance as lower arm length
+  bent_arm: 0.3           # [0, 1] -> 1 means wrist is touching shoulder. Default 0.5 (60 degrees)
+  head_wrist: 0.5         # [0, 1] -> 1 means distance between nose/left/right_eyes and wrist/elbow is same distance as lower arm length
   lower_arm_parallel: 0.8 # [0, 1] -> 1 means lower arms are parallel to each other
 
 score_weightage: # Recommended to sum to one

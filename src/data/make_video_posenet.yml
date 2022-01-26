@@ -2,7 +2,7 @@ nodes:
 - input.live:
     input_source: 1
     threading: True
-    buffer_frames: True
+    buffer_frames: False
     filename: "processed_video.mp4"
 
 - model.posenet:
@@ -18,4 +18,5 @@ nodes:
 - draw.tag
 - draw.poses
 - output.media_writer:
-    output_dir: "data/processed/"
+    output_dir: "data/interim/"
+- output.screen
