@@ -1,0 +1,22 @@
+nodes:
+- input.recorded:
+    input_dir: "data/raw/passenger_count.mp4"
+    threading: False
+    buffer_frames: False
+
+- model.yolo:
+    model_type: "v4"            # {"v4, "v4tiny"}
+    num_classes: 2
+    detect_ids: [0,5]
+    yolo_iou_threshold: 0.5
+    yolo_score_threshold: 0.4
+
+- custom_nodes.dabble.person_tracker
+- dabble.fps
+- draw.bbox
+- draw.tag
+# - draw.legend:
+    # all_legend_items: ["fps"]   # ["fps", "count", "zone_count"]
+    # position: "bottom"          # {"top", "bottom"}
+    # include: ["all_legend_items"]
+- output.screen

@@ -1,0 +1,24 @@
+# Mandatory configs
+input: ["img", "bboxes", "bbox_labels"]             
+output: ["obj_tags", "bboxes", "bbox_labels"]  
+
+# Optional configs depending on node
+sort_person_tracker:
+  DEFAULT_MAX_AGE: 2
+  DEFAULT_MIN_HITS: 4
+  DEFAULT_USE_TIME_SINCE_UPDATE: 200
+  DEFAULT_IOU_THRESHOLD: 0.5
+  DEFAULT_MIN_SCORE: 0.3
+  TRACKER_TYPE: 'medianflow'
+
+sort_bus_tracker:
+  DEFAULT_MAX_AGE: 1
+  DEFAULT_MIN_HITS: 1
+  DEFAULT_USE_TIME_SINCE_UPDATE: 200
+  DEFAULT_IOU_THRESHOLD: 0.5
+  DEFAULT_MIN_SCORE: 0.2
+  TRACKER_TYPE: 'medianflow'
+
+multithread: False
+
+show_class_in_tag: False
