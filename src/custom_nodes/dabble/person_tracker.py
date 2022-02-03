@@ -49,71 +49,75 @@ class Node(AbstractNode):
         """
         bboxes = []
         obj_tags = []
-        bbox_labels = []
-        try:
-            if inputs['bboxes'].shape[1] == 4:
-                que_person = Queue()
-                que_bus = Queue()
-                self.image_ = inputs['img']
-                self.img_n_rows, self.img_n_cols, _ = self.image_.shape
-                # pdb.set_trace()
-                person_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='person']
-                bus_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='bus']
+        bbox_labels = []        
+        que_person = Queue()
+        que_bus = Queue()
+        self.image_ = inputs['img']
+        self.img_n_rows, self.img_n_cols, _ = self.image_.shape
+        # pdb.set_trace()
+        person_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='person']
+        bus_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='bus']
+        if self.multithread:
+            t_person = threading.Thread(
+                target=lambda q , args: q.put(self._track(*args)), 
+                args=(que_person, [self.mot_person_tracker, person_bboxes]), 
+                daemon=True
+                )
+            t_bus = threading.Thread(
+                target=lambda q , args: q.put(self._track(*args)), 
+                args=(que_bus, [self.mot_bus_tracker, bus_bboxes]), 
+                daemon=True
+                )
+            t_person.start()
+            t_bus.start()
+            t_person.join()
+            t_bus.join()
 
-                if self.multithread:
-                    t_person = threading.Thread(
-                        target=lambda q , args: q.put(self._track(*args)), 
-                        args=(que_person, [self.mot_person_tracker, person_bboxes]), 
-                        daemon=True
-                        )
-                    t_bus = threading.Thread(
-                        target=lambda q , args: q.put(self._track(*args)), 
-                        args=(que_bus, [self.mot_bus_tracker, bus_bboxes]), 
-                        daemon=True
-                        )
-                    t_person.start()
-                    t_bus.start()
-                    t_person.join()
-                    t_bus.join()
-
-                    person_tracks, person_tracks_ids = que_person.get()
-                    bus_tracks, bus_tracks_ids = que_bus.get()
-                else:
-                    person_tracks, person_tracks_ids = self._track(self.mot_person_tracker, person_bboxes)
-                    bus_tracks, bus_tracks_ids = self._track(self.mot_bus_tracker, bus_bboxes)
-
-                bbox_labels = np.array(["person" for _ in person_tracks]+["bus" for _ in bus_tracks])
-                
-                if self.show_class_in_tag:
-                    obj_tags = [f"person_{id}" for id in person_tracks_ids] + [f"bus_{id}" for id in bus_tracks_ids]
-                else:
-                    obj_tags = [f"{id}" for id in person_tracks_ids] + [f"{id}" for id in bus_tracks_ids]
-
-                bboxes = np.concatenate((person_tracks, bus_tracks))
-        except IndexError:
-            pass
+            person_tracks, person_tracks_ids = que_person.get()
+            bus_tracks, bus_tracks_ids = que_bus.get()
+        else:
+            person_tracks, person_tracks_ids = self._track(self.mot_person_tracker, person_bboxes)
+            bus_tracks, bus_tracks_ids = self._track(self.mot_bus_tracker, bus_bboxes)
         
+        if self.show_class_in_tag:
+            obj_tags = [f"person_{id}" for id in person_tracks_ids] + [f"bus_{id}" for id in bus_tracks_ids]
+        else:
+            obj_tags = [f"{id}" for id in person_tracks_ids] + [f"{id}" for id in bus_tracks_ids]
+        
+        if (len(bus_tracks) > 0) and (len(person_tracks) > 0):
+            bbox_labels = np.array(["person" for _ in person_tracks]+["bus" for _ in bus_tracks])
+            bboxes = np.concatenate((person_tracks, bus_tracks))
+        elif len(person_tracks) > 0:
+            bbox_labels = np.array(["person" for _ in person_tracks])
+            bboxes = person_tracks
+        else:
+            bbox_labels = np.array(["bus" for _ in bus_tracks])
+            bboxes = bus_tracks
+
         outputs = {
             "bboxes": bboxes,
             "obj_tags": obj_tags,
             "bbox_labels": bbox_labels
             }
         self.frame += 1
+
+        if self.detection["draw_bbox"]:
+            self._draw_rectangle(inputs["bboxes"])
         # if self.frame == 11:
         #     pdb.set_trace()
         return outputs
 
     def _track(self, mot_tracker, bboxes):
         bboxes_rescaled = self._bboxes_rescaling(bboxes)
-        
         tracks, tracks_ids = mot_tracker.update_and_get_tracks(bboxes_rescaled, self.image_)
         tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
-        tracks[:,[0,2]] /= self.img_n_cols
-        tracks[:,[1,3]] /= self.img_n_rows
+        if len(tracks_ids) > 0:
+            tracks[:,[0,2]] /= self.img_n_cols
+            tracks[:,[1,3]] /= self.img_n_rows
         return tracks, tracks_ids
 
 
-    def _draw_rectangle(self, bboxes, color=[255,255,255], thickness=4):
+    def _draw_rectangle(self, bboxes, color=[255,255,255], thickness=2):
         bboxes_rescaled = self._bboxes_rescaling(bboxes)
         for box in bboxes_rescaled:
             self.image_ = cv2.rectangle(
@@ -123,6 +127,21 @@ class Node(AbstractNode):
                 color=color, 
                 thickness=thickness
                 )
+            if self.detection["include_tag"]:
+                text = 'Det'
+                self._include_text(box, text, color)
+
+    def _include_text(self, bbox, tag, colour=[255,255,255]):
+        # Put text at the bottom of bounding box
+        bbox_width = int(bbox[2] - bbox[0])
+        (text_width, text_height), baseline = cv2.getTextSize(
+            tag, cv2.FONT_HERSHEY_SIMPLEX, 1, 2
+        )
+        offset = int((bbox_width - text_width) / 2)
+        position = (bbox[0] + offset, bbox[3] + text_height + baseline)
+        cv2.putText(
+            self.image_, tag, position, cv2.FONT_HERSHEY_SIMPLEX, 1, colour, 3
+        )
 
     def _bboxes_rescaling(self, bboxes):
         bboxes_rescaled = []
