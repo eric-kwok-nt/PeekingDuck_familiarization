@@ -1,6 +1,17 @@
 # Mandatory configs
-input: ["img", "bboxes", "bbox_labels"]             
-output: ["obj_tags", "bboxes", "bbox_labels"]  
+input: 
+  - "img"
+  - "bboxes"
+  - "bbox_labels"
+output: 
+  - "obj_tags"
+  - "bboxes"
+  - "bbox_labels"
+  - "bus_tracks"
+  - "person_tracks"
+  - "bus_ids"
+  - "person_ids"
+  - "rescale_function"
 
 # Optional configs depending on node
 sort_person_tracker:
@@ -11,7 +22,7 @@ sort_person_tracker:
   TRACKER_TYPE: 'medianflow'
 
 sort_bus_tracker:
-  DEFAULT_MAX_AGE: 50
+  DEFAULT_MAX_AGE: 100
   DEFAULT_MIN_HITS: 1
   DEFAULT_USE_TIME_SINCE_UPDATE: 200
   DEFAULT_IOU_THRESHOLD: 0.5
@@ -20,5 +31,5 @@ sort_bus_tracker:
 multithread: True                     # Multithreading for tracking. One thread for bus the other for person
 show_class_in_tag: False              # Whether to show the class name in the bbox
 detection:            
-  draw_bbox: False                     # Whether to draw detection bboxes
-  include_tag: False                   # Whether to include tag to indicate the bbox is for detection
+  draw_bbox: True                     # Whether to draw detection bboxes
+  include_tag: True                   # Whether to include tag to indicate the bbox is for detection

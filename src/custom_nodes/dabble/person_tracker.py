@@ -6,10 +6,12 @@ from typing import Any, Dict
 
 from peekingduck.pipeline.nodes.node import AbstractNode
 from .sort_tracker.sort import Sort
+from .utils.draw_image import include_text
 import numpy as np
 import cv2
 import threading
 from queue import Queue
+from copy import deepcopy, copy
 import pdb
 
 
@@ -55,8 +57,8 @@ class Node(AbstractNode):
         self.image_ = inputs['img']
         self.img_n_rows, self.img_n_cols, _ = self.image_.shape
         # pdb.set_trace()
-        person_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='person']
-        bus_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='bus']
+        person_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='person'])
+        bus_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='bus'])
         if self.multithread:
             t_person = threading.Thread(
                 target=lambda q , args: q.put(self._track(*args)), 
@@ -95,9 +97,14 @@ class Node(AbstractNode):
             bboxes = bus_tracks
 
         outputs = {
-            "bboxes": bboxes,
+            "bboxes": deepcopy(bboxes),
             "obj_tags": obj_tags,
-            "bbox_labels": bbox_labels
+            "bbox_labels": bbox_labels,
+            "bus_tracks": deepcopy(bus_tracks),
+            "person_tracks": deepcopy(person_tracks),
+            "bus_ids": copy(bus_tracks_ids),
+            "person_ids": copy(person_tracks_ids),
+            "rescale_function": self.bboxes_rescaling
             }
         self.frame += 1
 
@@ -108,7 +115,7 @@ class Node(AbstractNode):
         return outputs
 
     def _track(self, mot_tracker, bboxes):
-        bboxes_rescaled = self._bboxes_rescaling(bboxes)
+        bboxes_rescaled = self.bboxes_rescaling(bboxes)
         tracks, tracks_ids = mot_tracker.update_and_get_tracks(bboxes_rescaled, self.image_)
         tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
         if len(tracks_ids) > 0:
@@ -118,7 +125,7 @@ class Node(AbstractNode):
 
 
     def _draw_rectangle(self, bboxes, color=[255,255,255], thickness=2):
-        bboxes_rescaled = self._bboxes_rescaling(bboxes)
+        bboxes_rescaled = self.bboxes_rescaling(bboxes)
         for box in bboxes_rescaled:
             self.image_ = cv2.rectangle(
                 self.image_, 
@@ -129,21 +136,10 @@ class Node(AbstractNode):
                 )
             if self.detection["include_tag"]:
                 text = 'Det'
-                self._include_text(box, text, color)
+                # self._include_text(box, text, color)
+                include_text(self.image_, box, text, color, pos='bottom')
 
-    def _include_text(self, bbox, tag, colour=[255,255,255]):
-        # Put text at the bottom of bounding box
-        bbox_width = int(bbox[2] - bbox[0])
-        (text_width, text_height), baseline = cv2.getTextSize(
-            tag, cv2.FONT_HERSHEY_SIMPLEX, 1, 2
-        )
-        offset = int((bbox_width - text_width) / 2)
-        position = (bbox[0] + offset, bbox[3] + text_height + baseline)
-        cv2.putText(
-            self.image_, tag, position, cv2.FONT_HERSHEY_SIMPLEX, 1, colour, 3
-        )
-
-    def _bboxes_rescaling(self, bboxes):
+    def bboxes_rescaling(self, bboxes):
         bboxes_rescaled = []
         for bbox in bboxes:
             x_min, y_min, x_max, y_max = bbox

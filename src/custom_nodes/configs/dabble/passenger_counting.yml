@@ -1,0 +1,30 @@
+# Mandatory configs
+input:
+  - "img"   
+  - "bus_tracks"
+  - "person_tracks"
+  - "bus_ids"
+  - "person_ids"
+  - "rescale_function"
+output: 
+  - "buses"
+
+# Optional configs depending on node
+bus_tracker:
+  iou_threshold: 0.85         # IOU below which is considered moving
+  door_height_proportion: 0.5 # Proportion of height of door with respective to the height of bus
+  ma_window: 10               # Moving average window size to track the previous bounding box location
+  look_back_period: 10        # Period to look back to get the previous bbox
+  draw_boundary: True
+  boundary_offset: 0.1        # A fraction of the width of the bus bbox
+
+person_tracker:
+  iou_threshold: 0.2          # IOU below which is considered to be another person
+  ma_window: 2
+  look_back_period: 1
+
+person_to_bus_ratio: [0.35, 0.65]  
+# Range of person bbox height to bus bbox height ratio to be considered as boarding passenger
+indicate_num_passengers: True
+record_to_csv: True
+csv_path: "./data/csv/bus_record.csv"
