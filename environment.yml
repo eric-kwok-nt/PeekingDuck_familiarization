@@ -8,9 +8,11 @@ dependencies:
     - click==7.1.2
     - colorama==0.4.4
     - cookiecutter==1.7.3
-    - numpy==1.17.3
+    - numpy==1.22.2
+    - omegaconf
     - opencv-python
     - opencv-contrib-python==4.2.0.34
+    - pandas
     - peekingduck==1.1.1
     - pyyaml==6.0
     - requests==2.24.0

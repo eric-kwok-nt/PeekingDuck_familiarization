@@ -11,7 +11,9 @@ def include_text(image, bbox, tag, colour=[255,255,255], pos='bottom'):
         offset = int((bbox_width - text_width) / 2)
         position = (bbox[0] + offset, bbox[3] + text_height + baseline)
     elif pos == 'top_left':
-        position = (bbox[0]-text_width, bbox[1] - baseline)
+        position = (bbox[0] - text_width, bbox[1] - baseline)
+    elif pos =='top_left_upper':
+        position = (bbox[0] - text_width, bbox[1] - baseline*2 - text_height)
     elif pos == 'top_right':
         position = (bbox[2], bbox[1] - baseline)
     cv2.putText(

@@ -12,6 +12,7 @@ import cv2
 import threading
 from queue import Queue
 from copy import deepcopy, copy
+import os
 import pdb
 
 
@@ -23,7 +24,9 @@ class Node(AbstractNode):
     """
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
-        super().__init__(config, node_path=__name__, **kwargs)
+        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/dabble.person_tracker")
+        super().__init__(config, node_path=node_path, **kwargs)
+        # super().__init__(config, node_path=__name__, **kwargs)
         self.mot_person_tracker = Sort(max_age=self.sort_person_tracker['DEFAULT_MAX_AGE'],
                        min_hits=self.sort_person_tracker["DEFAULT_MIN_HITS"],
                        use_time_since_update=self.sort_person_tracker['DEFAULT_USE_TIME_SINCE_UPDATE'],

@@ -1,29 +1,47 @@
 # PeekingDuck_familiarization
 ## 1. Description
 
-This mini project attempts to test out the Human-Pose Estimation and Object Detection features in [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library
+This mini project attempts to test out the Human-Pose Estimation and Object Detection features in [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library. Two simple use cases are being tested:
+1. Dab Detection using pose detection
+2. Counting of number of passengers boarded in each bus in a recorded video
 
 ### 1.1 Dab Detection example using HRNet + YOLOv4
 ![An example for dab detection](./images/dab_detection.gif)
+
+### 1.2 Passenger Counting
+As the test video for performing the passenger counting cannot be released publicly, an illustration would be used to illustrate the given problem for passenger counting.<br>
+![Illustration for passenger counting](./images/passenger_counting_illustration.png)<br>
+There are several assumptions to this problem:
+1. Perspective of the camera remains constant
+2. Passengers only boards the bus from the rightside (image's perspective).
+3. Boarding only when the bus stops
+4. Passengers who boarded the bus do not alight in the same bus stop
 
 ## 2. Project Organization
 ------------
     .
     ├── LICENSE
     ├── README.md
-    ├── config                   -> Contains yaml config files for various experiments
-    ├── dab_detection_demo.ipynb -> Notebook for demo
+    ├── config                    -> Contains yaml config files for various experiments
+    │   ├── dab_recoginition      
+    │   └── passenger_counting     
+    ├── dab_detection_demo.ipynb  -> Notebook for dab recognition demo
+    ├── data                      -> To contain input or output data. Included in gitignore.
     ├── environment.yml
-    ├── images                   -> images for README file
-    └── src                      -> Contains yaml config files and python scripts for custom nodes
-        ├── __init__.py
-        ├── custom_nodes         
-        │   ├── configs          
-        └── data                 -> Contains yaml config files for recording videos with dab detection
+    ├── images                    -> images for README file
+    ├── runner.py                 -> Python script for running passenger counting
+    ├── src
+    │   ├── custom_nodes
+    │   │   ├── configs
+    │   │   │   └── dabble        -> Config files for the respective dabble custom nodes
+    │   │   └── dabble            -> Contains the source code for the 2 custom nodes
+    │   │       ├── sort_tracker  -> Files pertaining to the sort tracker
+    │   │       └── utils         -> Contains utility files for drawing on image and for tracking
+    │   └── data                  -> Contains yaml config files for recording videos for dab recognition, and a script to convert video file format from mkv to mp4 format
 --------
 
 ## 3. Usage
-### 3.1 Testing out Dab Detection using PeekingDuck CLI 
+### 3.1 Dab Detection using PeekingDuck CLI 
 #### 3.1.1 Dab Detection with Live Input
 Using __HRNet + YOLOv4__:
 ```bash
@@ -55,6 +73,45 @@ nodes:
 - output.media_writer:
     output_dir: "path_to_your_video_file"
 ```
+
+### 3.2 Passenger Counting using recorded video
+To test the passenger counting, **a recorded video is required with a similar pespective** as shown in the illustration in **Section 1.2** above.
+
+To run the programme, issue the following command:
+```bash 
+python runner.py
+```
+
+```
+usage: runner.py [-h] [--config CONFIG]
+
+Passenger Counting Algorithm
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --config CONFIG  Path to the config file (Default: "./config/passenger_counting/")
+```
+General configurations can be changed in the config file: ```./config/passenger_counting/runner_config.yaml```
+
+1. To set or change the input video path
+2. Whether to use multithreading and buffering for the input node (Default is False)
+3. Hyperparameters for the YOLOv4 object detection model
+4. Whether to output the processed frames to the screen or save them as a video file
+5. Output path of the video file (Not applicable when output to the screen option is True)
+
+Specific parameters for tracking are in the config file: ```./src/custom_nodes/configs/dabble/person_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
+1. Bus / Person tracking specific parameters such as the number of frames a tracker should stay without being updated and the type of tracker being used.
+2. Whether multithreading is used for tracking the bus and person respectively
+3. Whether to show the class of the bounding box in the tag (Top of the bbox)
+4. Whether to include bboxes from the YOLOv4 detection algorithm (in addition to the default tracker bboxes) and tags (placed at the bottom of bbox) to identify them as the detection bboxes
+
+Lastly, parameters for passenger counting heuristics are in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml```. In this config file, the user can change settings such as the following:
+1. Bus tracker object parameters. E.g.: Estimated "door" height, "Door" offset
+2. Both bus and person tracker object parameters. E.g.: The moving average parameters of bounding boxes
+3. The output path of the recorded csv file, write mode etc.
+4. Whether to indicate the passenger counts on the top left of the bus bbox 
+
+Descriptions can also be found in the comments in the yaml file. 
 
 ## 4. Method
 ### 4.1 Dab Detection
@@ -101,12 +158,46 @@ It is to note that the lower bound of the score is dependent on the threshold be
 In addition, the sum of the score weightage do not need to be 1. A function has been included in the process to automatically normalize the total score weightage to 1.
 
 ### 4.2 Bus Passenger Counting
-- [ ] To be updated  
+An overview of the passenger counting algorithm can be illustrated in the flowchart below
+![Algorithm flowchat](./images/flowchart.png)
+
+#### 4.2.1 Challenges
+Finding out how many passengers boarded a particular bus can be tricky and it can be sensitive to the **performance of the object detection model** as well as the **tracker's performance**. Some of the problems and challenges are as follows:
+1. Occulsion of persons and buses. 
+    * Object detection model unable to detect person or bus. This leads to under-counting
+2. False positives from detection model.
+    * Mistaken cars for buses (Can be tuned by increasing the score threshold for the object detection model)
+    * Mistaken 2 buses as 1 bus (Can be tuned by reducing IOU threshold)
+3. "Ghost" bboxes from tracker
+    * Can be due to erroneous detections from object detection model
+4. ID switching 
+    * Can be due to wrong matching result between detection bboxes and predicted bboxes from tracker
+5. Bounding boxes "jumping around"
+    * Moving average is used to get a smoother motion of the tracked objects
+
+#### 4.2.2 Tracking and Counting Strategies
+In view of the above challenges, besides finetuning or obtaining a better model or tracker, a strategy to count the passengers and to manage the person tracker objects has been devised.
+
+Each tracker object is considered to be a new object only if it has not been tracked before. i.e. tracker ID not found in list. Also, for person object, if the previous bbox of a specific ID has a IOU that is below certain threshold, it is considered to be a new object in the subsequent frame. This is to tackle the problem of ID switching. For object IDs that were present in previous frame but absent in current frame, they will be removed from the list and deemed as being left from the view of the camera (This is because there is no object re-ID and ID numbers are being reused by the tracker everytime it sees a 'new' object). 
+
+For a person to be considered to be boarded a certain bus, there are several requirements:
+1. The centroid of the person bbox must first be on the right side of the door (a virtual line offset from the bus), and subsequently appear on the left side.
+2. The size of the person bounding box with respect to the bus's bounding box must be within certain threshold. This is to prevent over counting for people walking behind or in front of the bus. 
+3. The centroid of the person must be within the y values of the "bus door"
+
+#### 4.2.3 CSV Output
+A CSV file with the number of passengers boarded for each bus is saved everytime the programme ends. The output path can be changed in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
+
+|   | Number of Passengers | Recorded Time |
+|---|----------------------|---------------|
+| 0 | n                    | min:sec       |
+
+The recorded time is the time when the bus was first captured by the detection model.
 
 ## 5. Author and Acknowledgements
 **Author**
 * [Eric Kwok](https://github.com/eric-kwok-nt)
 
-This mini-project is created using the [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library.
+This mini-project was created using the [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library and the [SORT_OpenCV_Trackers](https://github.com/alexgoft/SORT_OpenCV_Trackers) library.
 
 

@@ -13,6 +13,7 @@ from .utils.tracker import Person, Bus
 from .utils.draw_image import include_text
 from copy import deepcopy, copy
 import pandas as pd
+from collections import defaultdict
 import pdb
 
 
@@ -24,7 +25,9 @@ class Node(AbstractNode):
     """
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
-        super().__init__(config, node_path=__name__, **kwargs)
+        # super().__init__(config, node_path=__name__, **kwargs)
+        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/dabble.passenger_counting")
+        super().__init__(config, node_path=node_path, **kwargs)
         self.bus_dict = dict()
         self.person_dict = dict()
         self.bus_tracks = None
@@ -34,7 +37,9 @@ class Node(AbstractNode):
         self.person_ids = None
         self.rescale_function = None
         self.image_ = None
-        self.buses_records = list()
+        self.frame = 0
+        self.fps_ = None
+        self.buses_records = dict()
 
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
@@ -46,12 +51,14 @@ class Node(AbstractNode):
         Returns:
             outputs (dict): Dictionary with keys "__".
         """
+        self.frame += 1
         self.bus_tracks = deepcopy(inputs["bus_tracks"])
         self.bus_ids = copy(inputs["bus_ids"])
         self.person_tracks = deepcopy(inputs["person_tracks"])
         self.person_ids = copy(inputs["person_ids"])
         self.rescale_function = inputs['rescale_function']
         self.image_ = inputs['img']
+        self.fps_ = inputs["saved_video_fps"]
 
         self._update_bus()
         self._update_person()
@@ -63,9 +70,26 @@ class Node(AbstractNode):
                     self.bus_ids = np.array(self.bus_ids)
                 bus_bbox = self.rescaled_bus_tracks[np.where(self.bus_ids==bus_id)[0][0]]
                 text = f"n_passengers: {num_passengers}"
-                include_text(self.image_, bus_bbox, text, [255,255,255], 'top_right')
+                include_text(self.image_, bus_bbox, text, [255,255,255], 'top_left_upper')
 
         return {"buses": self.bus_dict}
+
+    def save_data(self, mode='w'):
+        records_to_save = defaultdict(list)
+        indices = []
+        if self.record_to_csv:
+            self.logger.info("Saving bus record to CSV file!")
+            base, _ = ntpath.split(self.csv_path)
+            if not os.path.exists(base):
+                os.makedirs(base)
+                self.logger.info(f"Created folder '{base}'")
+            for i, bus in enumerate(self.buses_records.keys()):
+                records_to_save["Number of Passengers"].append(len(bus.passengers))
+                min, sec = self.buses_records[bus]
+                records_to_save["Recorded Time"].append(f"{min}:{sec}")
+                indices.append(str(i))
+            series = pd.DataFrame(data=records_to_save, index=indices)
+            series.to_csv(self.csv_path, mode=mode)
 
     def _update_bus(self):
         self.rescaled_bus_tracks = self.rescale_function(self.bus_tracks)
@@ -102,7 +126,8 @@ class Node(AbstractNode):
                     ma_window=self.bus_tracker['ma_window'],
                     look_back_period=self.bus_tracker['look_back_period']
                 )
-                self.buses_records.append(bus_dict[id])
+                min, sec = int(self.frame//self.fps_//60), int(self.frame//self.fps_)%60
+                self.buses_records[bus_dict[id]] = (min, sec)
             
         self.bus_dict = bus_dict
 
@@ -155,17 +180,6 @@ class Node(AbstractNode):
                         # and is currently on the left side and within the height of door
                         bus_obj.passengers.add(person_obj)
 
+
     def __del__(self):
-        records_to_save = dict()
-        indices = []
-        if self.record_to_csv:
-            self.logger.info("Saving bus record to CSV file!")
-            base, _ = ntpath.split(self.csv_path)
-            if not os.path.exists(base):
-                os.makedirs(base)
-                self.logger.info(f"Created folder '{base}'")
-            for i, bus in enumerate(self.buses_records):
-                records_to_save[f"bus_{i}"] = len(bus.passengers)
-                indices.append(f"bus_{i}")
-            series = pd.Series(data=records_to_save, index=indices, name="Number of passengers boarded")
-            series.to_csv(self.csv_path)
+        self.save_data(mode=self.write_mode)
