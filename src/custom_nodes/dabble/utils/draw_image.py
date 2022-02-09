@@ -1,8 +1,23 @@
 import cv2
+import numpy as np
+from typing import Union
 
 
-def include_text(image, bbox, tag, colour=[255,255,255], pos='bottom'):
-    # Put text at the bottom of bounding box
+def include_text(
+    image: np.ndarray, 
+    bbox: Union[np.ndarray, list], 
+    tag: str, colour=[255,255,255], 
+    pos='bottom'
+):
+    """To add text to the various locations of the bbox
+
+    Args:
+        image (np.ndarray): Image to be written on
+        bbox (Union[np.ndarray, list]): Bounding box to put the text on
+        tag (str): The text to write on the image
+        colour (list, optional): Colour of text. Defaults to [255,255,255].
+        pos (str, optional): Position of text. Defaults to 'bottom'.
+    """
     (text_width, text_height), baseline = cv2.getTextSize(
         tag, cv2.FONT_HERSHEY_SIMPLEX, 1, 2
     )

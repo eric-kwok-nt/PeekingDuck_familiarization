@@ -1,7 +1,3 @@
-"""
-Node template for creating custom nodes.
-"""
-
 from typing import Any, Dict, Union
 
 from peekingduck.pipeline.nodes.node import AbstractNode
@@ -18,7 +14,7 @@ import pdb
 
 
 class Node(AbstractNode):
-    """This is a template class of how to write a node for PeekingDuck.
+    """This node counts the number of passengers boarding each bus
 
     Args:
         config (:obj:`Dict[str, Any]` | :obj:`None`): Node configuration.
@@ -43,13 +39,13 @@ class Node(AbstractNode):
 
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
-
+        """
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys "img", "bus_tracks", "person_tracks",
+            "bus_ids", "person_ids", "rescale_function" and "saved_video_fps".
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): Dictionary with keys "buses".
         """
         self.frame += 1
         self.bus_tracks = deepcopy(inputs["bus_tracks"])
@@ -75,23 +71,34 @@ class Node(AbstractNode):
         return {"buses": self.bus_dict}
 
     def save_data(self, mode='w'):
+        """Saves the number of passengers in each bus, the timing in the video when the bus appears to a csv file
+
+        Args:
+            mode (str, optional): Whether to write to a new file or append to an existing file. 
+            Defaults to 'w'.
+        """
         records_to_save = defaultdict(list)
         indices = []
         if self.record_to_csv:
             self.logger.info("Saving bus record to CSV file!")
             base, _ = ntpath.split(self.csv_path)
+            # Create make new directories if the path does not exist
             if not os.path.exists(base):
                 os.makedirs(base)
                 self.logger.info(f"Created folder '{base}'")
+            # Iterate each bus object and save to a DataFrame
             for i, bus in enumerate(self.buses_records.keys()):
                 records_to_save["Number of Passengers"].append(len(bus.passengers))
                 min, sec = self.buses_records[bus]
                 records_to_save["Recorded Time"].append(f"{min}:{sec}")
                 indices.append(str(i))
-            series = pd.DataFrame(data=records_to_save, index=indices)
-            series.to_csv(self.csv_path, mode=mode)
+            df = pd.DataFrame(data=records_to_save, index=indices)
+            df.to_csv(self.csv_path, mode=mode)
 
     def _update_bus(self):
+        """Updates the bus objects. If bus object already exists, update the existing object.
+        Otherwise, create a new object.
+        """
         self.rescaled_bus_tracks = self.rescale_function(self.bus_tracks)
         bus_dict = dict()
         for idx, id in enumerate(self.bus_ids):
@@ -99,7 +106,7 @@ class Node(AbstractNode):
                 bus_obj = self.bus_dict[id]
                 bus_obj.update_pos(self.bus_tracks[idx])
                 bus_dict[id] = bus_obj
-                
+                # Draw the virtual door line if the bus is stationary
                 if bus_obj.is_stationary():
                     text = 'stationary'
                     bus_dict[id].door_line(
@@ -110,7 +117,7 @@ class Node(AbstractNode):
                     )
                 else:
                     text='moving'
-
+                # Indicates in the image whether a bus is moving
                 include_text(
                     self.image_, 
                     self.rescaled_bus_tracks[idx], 
@@ -119,6 +126,7 @@ class Node(AbstractNode):
                     pos='top_left'
                 )
             else:
+                # Creates a new object if bus object does not exist
                 bus_dict[id] = Bus(
                     current_bbox=copy(self.bus_tracks[idx]), 
                     iou_threshold=self.bus_tracker['iou_threshold'],
@@ -127,17 +135,23 @@ class Node(AbstractNode):
                     look_back_period=self.bus_tracker['look_back_period']
                 )
                 min, sec = int(self.frame//self.fps_//60), int(self.frame//self.fps_)%60
+                # buses_records dict have keys that are bus object and value being their appearance timing
                 self.buses_records[bus_dict[id]] = (min, sec)
-            
+        # Copy the bus_dict into the class attribute, objects that do not appear in current frame are removed
         self.bus_dict = bus_dict
 
     def _update_person(self):
+        """Updates the person objects. If person object already exists, update the existing object.
+        Otherwise, create a new object.
+        """
         person_dict = dict()
         for idx, id in enumerate(self.person_ids):
+            # Check whether the person object already exists in record
             if id in self.person_dict:
                 person_obj = self.person_dict[id]
                 person_obj.update_pos(self.person_tracks[idx])
-
+                # Check whether ID switch has occurred to a particular person ID 
+                # by looking at the IOU of previous and current bbox
                 if person_obj.is_same_id():
                     person_dict[id] = person_obj
                 else:
@@ -158,6 +172,8 @@ class Node(AbstractNode):
         self.person_dict = person_dict
     
     def _count_passenger(self):
+        """Count the number of passengers based on the heuristics
+        """
         for _, bus_obj in self.bus_dict.items():
             if bus_obj.stationary:
                 for _, person_obj in self.person_dict.items():
@@ -182,4 +198,5 @@ class Node(AbstractNode):
 
 
     def __del__(self):
+        # Saves the data before the passenger counting instance is destroyed
         self.save_data(mode=self.write_mode)

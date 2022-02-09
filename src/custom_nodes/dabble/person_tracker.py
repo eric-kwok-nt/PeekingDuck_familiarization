@@ -1,8 +1,4 @@
-"""
-Node template for creating custom nodes.
-"""
-
-from typing import Any, Dict
+from typing import Any, Dict, List, Union, Callable, Tuple
 
 from peekingduck.pipeline.nodes.node import AbstractNode
 from .sort_tracker.sort import Sort
@@ -20,9 +16,8 @@ from .deep_sort.tools import generate_detections as gdet
 import pdb
 
 
-
 class Node(AbstractNode):
-    """This is a template class of how to write a node for PeekingDuck.
+    """This node tracks person and bus objects
 
     Args:
         config (:obj:`Dict[str, Any]` | :obj:`None`): Node configuration.
@@ -68,13 +63,13 @@ class Node(AbstractNode):
         self.frame = 0
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
-
+        """
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys "img", "bboxes", "bbox_labels" and "bbox_scores".
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): Dictionary with keys "obj_tags", "bboxes", "bbox_labels", "bus_tracks",
+            "person_tracks", "bus_ids", "person_ids" and "rescale_function".
         """
         bboxes = []
         obj_tags = []
@@ -83,9 +78,12 @@ class Node(AbstractNode):
         que_bus = Queue()
         self.image_ = inputs['img']
         self.img_n_rows, self.img_n_cols, _ = self.image_.shape
-        # pdb.set_trace()
+
+        # Separates person bboxes with bus bboxes and tracks them separately
         person_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='person'])
         bus_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='bus'])
+
+        # In puts to tracker is different for SORT and Deep SORT algorithm
         if not self.deep_sort:
             kwargs_person = {"bboxes": person_bboxes, "mot_tracker": self.mot_person_tracker}
             kwargs_bus = {"bboxes": bus_bboxes, "mot_tracker": self.mot_bus_tracker}
@@ -104,6 +102,8 @@ class Node(AbstractNode):
                 "scores": deepcopy(inputs['bbox_scores'][inputs["bbox_labels"]=='bus']),
                 "default_max_age": self.deep_sort_bus_tracker["default_max_age"]
             }
+
+        # Performs tracking and obtain various track bboxes and IDs
         if self.multithread:
             t_person = threading.Thread(
                 target=lambda q , kwargs: q.put(self._track(**kwargs)), 
@@ -126,11 +126,13 @@ class Node(AbstractNode):
             person_tracks, person_tracks_ids = self._track(**kwargs_person)
             bus_tracks, bus_tracks_ids = self._track(**kwargs_bus)
         
+        # Whether to show the class name in the tag
         if self.show_class_in_tag:
             obj_tags = [f"person_{id}" for id in person_tracks_ids] + [f"bus_{id}" for id in bus_tracks_ids]
         else:
             obj_tags = [f"{id}" for id in person_tracks_ids] + [f"{id}" for id in bus_tracks_ids]
         
+        # Combines tracks and bbox labels for the draw bbox node downstream
         if (len(bus_tracks) > 0) and (len(person_tracks) > 0):
             bbox_labels = np.array(["person" for _ in person_tracks]+["bus" for _ in bus_tracks])
             bboxes = np.concatenate((person_tracks, bus_tracks))
@@ -150,16 +152,35 @@ class Node(AbstractNode):
             "bus_ids": copy(bus_tracks_ids),
             "person_ids": copy(person_tracks_ids),
             "rescale_function": self.bboxes_rescaling
-            }
+        }
         self.frame += 1
 
+        # Whether to draw detection bboxes
         if self.detection["draw_bbox"]:
             self._draw_rectangle(inputs["bboxes"])
-        # if self.frame == 11:
-        #     pdb.set_trace()
+
         return outputs
 
-    def _track(self, bboxes, mot_tracker=None, names=[], scores=[], default_max_age=1):
+    def _track(
+        self, 
+        bboxes: Union[list, np.ndarray], 
+        mot_tracker: Callable, 
+        names=[], 
+        scores=[], 
+        default_max_age=1
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Performs tracking with either SORT or Deep SORT algorithm
+
+        Args:
+            bboxes (Union[list, np.ndarray]): List of Bounding Boxes
+            mot_tracker (Callable): The respective MOT tracker 
+            names (list, optional): Respective class names. Only applicable to DeepSORT. Defaults to [].
+            scores (list, optional): Respective bbox scores. Only applicable to DeepSORT. Defaults to [].
+            default_max_age (int, optional): Max age of the tracker bbox. Only applicable to DeepSORT. Defaults to 1.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: The tracked bboxes and the respective track IDs.
+        """
         tracks = []
         tracks_ids = []
         if len(bboxes) > 0:
@@ -183,7 +204,7 @@ class Node(AbstractNode):
                         continue 
                     tracks.append(track.to_tlbr())
                     tracks_ids.append(track.track_id)
-                    # pdb.set_trace()
+
                 tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
             if len(tracks) > 0:
                 tracks[:,[0,2]] /= self.img_n_cols
@@ -191,7 +212,14 @@ class Node(AbstractNode):
         return tracks, tracks_ids
 
 
-    def _draw_rectangle(self, bboxes, color=[255,255,255], thickness=2):
+    def _draw_rectangle(self, bboxes: Union[list, np.ndarray], color=[255,255,255], thickness=2):
+        """Draws the bboxes on image
+
+        Args:
+            bboxes (Union[list, np.ndarray]): List or array of bounding boxes
+            color (list, optional): Colour of the bbox. Defaults to [255,255,255].
+            thickness (int, optional): Thickness of bbox. Defaults to 2.
+        """
         bboxes_rescaled = self.bboxes_rescaling(bboxes)
         for box in bboxes_rescaled:
             self.image_ = cv2.rectangle(
@@ -206,7 +234,15 @@ class Node(AbstractNode):
                 # self._include_text(box, text, color)
                 include_text(self.image_, box, text, color, pos='bottom')
 
-    def bboxes_rescaling(self, bboxes):
+    def bboxes_rescaling(self, bboxes: List[Union[list, tuple]]) -> List[Union[list, tuple]]:
+        """Rescale the normalized bboxes to the original scale.
+
+        Args:
+            bboxes (List[Union[list, tuple]]): Bounding boxes to resize
+
+        Returns:
+            List[Union[list, tuple]]: Rescaled bboxes
+        """
         bboxes_rescaled = []
         for bbox in bboxes:
             x_min, y_min, x_max, y_max = bbox

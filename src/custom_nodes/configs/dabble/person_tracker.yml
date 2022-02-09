@@ -14,7 +14,7 @@ output:
   - "person_ids"
   - "rescale_function"
 
-deep_sort: True
+deep_sort: False
 
 sort_person_tracker:                  # For SORT algorithm
   DEFAULT_MAX_AGE: 5                  # How many frames should a tracker stay without update and without successfully getting tracking state

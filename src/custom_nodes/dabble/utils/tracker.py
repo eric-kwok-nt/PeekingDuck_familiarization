@@ -8,7 +8,21 @@ import pdb
 
 class Tracked_Obj:
 
-    def __init__(self, current_bbox: Union[list, np.ndarray], iou_threshold: float, ma_window: int, look_back_period: int):
+    def __init__(
+        self, 
+        current_bbox: Union[list, np.ndarray], 
+        iou_threshold: float, 
+        ma_window: int, 
+        look_back_period: int
+    ):
+        """Parent class of Bus and Person object
+
+        Args:
+            current_bbox (Union[list, np.ndarray]): The current bounding box
+            iou_threshold (float): IOU threshold to check whether a bus is stationary or if ID switch has occurred
+            ma_window (int): The number of frames of the moving average window for calculating the bounding boxes
+            look_back_period (int): How many frames to look back for calculating the previous bbox location
+        """
         self.prev_bbox = copy(current_bbox) # bbox before
         self.cur_bbox = None # bbox after
         self.iou_threshold = iou_threshold
@@ -22,7 +36,12 @@ class Tracked_Obj:
         self.look_back_list = [self.prev_bbox for _ in range(self.look_back_period)]
         self.look_back_count = 0
 
-    def update_pos(self, current_bbox: Union[list, np.ndarray]):
+    def update_pos(self, current_bbox: Union[list, np.ndarray]) -> None:
+        """Updates the object instance with the new bbox location
+
+        Args:
+            current_bbox (Union[list, np.ndarray]): The current bounding box location
+        """
         # Get MA of previous bbox and add into the look back list
         self.prev_bbox = np.mean(self.ma_bbox, axis=0)
         if self.look_back_count == self.look_back_period:
@@ -42,7 +61,13 @@ class Tracked_Obj:
         self.prev_centroid = self.find_centroid(self.prev_bbox)
         self.cur_centroid = self.find_centroid(self.cur_bbox)
 
-    def _moved_beyond_threshold(self):
+    def _moved_beyond_threshold(self) -> bool:
+        """Whether the object has moved beyond a certain threshold by looking at the current
+        estimated and the previous estimated bbox with a certain look back period
+
+        Returns:
+            bool
+        """
         assert self.cur_bbox is not None, "Please update the current bbox first!"
         prev_bbox = self.look_back_list[self.look_back_count - self.look_back_period]
         bbox_iou = iou(prev_bbox, self.cur_bbox)
@@ -53,6 +78,14 @@ class Tracked_Obj:
 
     @staticmethod
     def find_centroid(bbox: Union[list, np.ndarray]) -> np.ndarray:
+        """Find the centroid of a bounding box
+
+        Args:
+            bbox (Union[list, np.ndarray]): Bounding box in concern
+
+        Returns:
+            np.ndarray: The centroid of bbox
+        """
         x = (bbox[0] + bbox[2])/2
         y = (bbox[1] + bbox[3])/2
         return np.array([x, y])
@@ -77,6 +110,11 @@ class Person(Tracked_Obj):
         super().__init__(current_bbox, iou_threshold, ma_window, look_back_period)
 
     def is_same_id(self) -> bool:
+        """Whether ID switch has occurred for the person object
+
+        Returns:
+            bool
+        """
         return not self._moved_beyond_threshold()       
             # Return False if person bbox moved beyond threshold. i.e. tracking another person. To tackle id switching
         
@@ -98,6 +136,11 @@ class Bus(Tracked_Obj):
         self.stationary = False
         
     def is_stationary(self) -> bool:
+        """Whether the bus is stationary
+
+        Returns:
+            bool
+        """
         self.stationary = not self._moved_beyond_threshold()
         return self.stationary       
 
@@ -108,7 +151,14 @@ class Bus(Tracked_Obj):
             draw_door=False, 
             image=None
         ) -> None:
+        """Creates the virtual door line and optionally draws it on the image. 
 
+        Args:
+            offset (float): How much offset as a fraction of the width of bus bbox
+            rescale_function (Callable[list], optional): Rescale function from the person_tracker node. Defaults to None.
+            draw_door (bool, optional): Whether to draw the virtual door line on image. Defaults to False.
+            image (np.ndarray, optional): Image to be drawn on. Defaults to None.
+        """
         offset *= (self.cur_bbox[2] - self.cur_bbox[0]) # Assume door is vertically straight on the right side
         x = self.cur_bbox[2] + offset
         y2 = self.cur_bbox[3]
