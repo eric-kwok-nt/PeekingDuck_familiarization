@@ -3,6 +3,7 @@ input:
   - "img"
   - "bboxes"
   - "bbox_labels"
+  - "bbox_scores"
 output: 
   - "obj_tags"
   - "bboxes"
@@ -13,20 +14,32 @@ output:
   - "person_ids"
   - "rescale_function"
 
-# Optional configs depending on node
-sort_person_tracker:
+deep_sort: True
+
+sort_person_tracker:                  # For SORT algorithm
   DEFAULT_MAX_AGE: 5                  # How many frames should a tracker stay without update and without successfully getting tracking state
   DEFAULT_MIN_HITS: 4                 # Minimum hits to create a new tracker object
   DEFAULT_USE_TIME_SINCE_UPDATE: 200  # How many frames should a tracker stay without update even with successful tracking state
   DEFAULT_IOU_THRESHOLD: 0.5          # IOU threshold for matching the detection and the prediction from the tracker
   TRACKER_TYPE: 'medianflow'
 
-sort_bus_tracker:
+sort_bus_tracker:                     # For SORT algorithm
   DEFAULT_MAX_AGE: 100
   DEFAULT_MIN_HITS: 1
   DEFAULT_USE_TIME_SINCE_UPDATE: 200
   DEFAULT_IOU_THRESHOLD: 0.5
   TRACKER_TYPE: 'medianflow'
+
+deep_sort_person_tracker:             # For Deep SORT algorithm
+  max_cosine_distance: 0.4
+  nn_budget: null
+  default_max_age: 4
+
+deep_sort_bus_tracker:                # For Deep SORT algorithm
+  max_cosine_distance: 0.4
+  nn_budget: null
+  default_max_age: 100
+
 
 multithread: True                     # Multithreading for tracking. One thread for bus the other for person
 show_class_in_tag: False              # Whether to show the class name in the bbox

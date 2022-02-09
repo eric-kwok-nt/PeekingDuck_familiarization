@@ -2,8 +2,8 @@
 ## 1. Description
 
 This mini project attempts to test out the Human-Pose Estimation and Object Detection features in [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library. Two simple use cases are being tested:
-1. Dab Detection using pose detection
-2. Counting of number of passengers boarded in each bus in a recorded video
+1. Dab Detection using pose detection models from PeekingDuck
+2. Counting of number of passengers boarded in each bus in a recorded video using object detection from PeekingDuck and [SORT](https://github.com/alexgoft/SORT_OpenCV_Trackers) or [DeepSort](https://github.com/nwojke/deep_sort) tracking library
 
 ### 1.1 Dab Detection example using HRNet + YOLOv4
 ![An example for dab detection](./images/dab_detection.gif)
@@ -13,7 +13,7 @@ As the test video for performing the passenger counting cannot be released publi
 ![Illustration for passenger counting](./images/passenger_counting_illustration.png)<br>
 There are several assumptions to this problem:
 1. Perspective of the camera remains constant
-2. Passengers only boards the bus from the rightside (image's perspective).
+2. Passengers only boards the bus from the right-side (image's perspective)
 3. Boarding only when the bus stops
 4. Passengers who boarded the bus do not alight in the same bus stop
 
@@ -41,7 +41,7 @@ There are several assumptions to this problem:
 --------
 
 ## 3. Usage
-### 3.1 Dab Detection using PeekingDuck CLI 
+### 3.1 Dab Detection using PeekingDuck CLI
 #### 3.1.1 Dab Detection with Live Input
 Using __HRNet + YOLOv4__:
 ```bash
@@ -75,10 +75,10 @@ nodes:
 ```
 
 ### 3.2 Passenger Counting using recorded video
-To test the passenger counting, **a recorded video is required with a similar pespective** as shown in the illustration in **Section 1.2** above.
+To test the passenger counting, **a recorded video is required with a similar perspective** as shown in the illustration in **Section 1.2** above.
 
 To run the programme, issue the following command:
-```bash 
+```bash
 python runner.py
 ```
 
@@ -100,6 +100,7 @@ General configurations can be changed in the config file: ```./config/passenger_
 5. Output path of the video file (Not applicable when output to the screen option is True)
 
 Specific parameters for tracking are in the config file: ```./src/custom_nodes/configs/dabble/person_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
+1. Whether to use Deep SORT or SORT algorithm
 1. Bus / Person tracking specific parameters such as the number of frames a tracker should stay without being updated and the type of tracker being used.
 2. Whether multithreading is used for tracking the bus and person respectively
 3. Whether to show the class of the bounding box in the tag (Top of the bbox)
@@ -109,15 +110,15 @@ Lastly, parameters for passenger counting heuristics are in the config file: ```
 1. Bus tracker object parameters. E.g.: Estimated "door" height, "Door" offset
 2. Both bus and person tracker object parameters. E.g.: The moving average parameters of bounding boxes
 3. The output path of the recorded csv file, write mode etc.
-4. Whether to indicate the passenger counts on the top left of the bus bbox 
+4. Whether to indicate the passenger counts on the top left of the bus bbox
 
-Descriptions can also be found in the comments in the yaml file. 
+Descriptions can also be found in the comments in the yaml file.
 
 ## 4. Method
 ### 4.1 Dab Detection
-The Dab Detection process is based on some of the Pose Estimation / Object Detection models (YOLOv4 + HRNet or PoseNet) that comes with the [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library. 
+The Dab Detection process is based on some of the Pose Estimation / Object Detection models (YOLOv4 + HRNet or PoseNet) that comes with the [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library.
 
-For the full list of models available and their coresponding performances, please refer to the links [Object Detection Models](https://peekingduck.readthedocs.io/en/stable/resources/01a_object_detection.html#general-object-detection-ids) and [Pose Estimation Models](https://peekingduck.readthedocs.io/en/stable/resources/01b_pose_estimation.html#whole-body-keypoint-ids).
+For the full list of models available and their corresponding performances, please refer to the links [Object Detection Models](https://peekingduck.readthedocs.io/en/stable/resources/01a_object_detection.html#general-object-detection-ids) and [Pose Estimation Models](https://peekingduck.readthedocs.io/en/stable/resources/01b_pose_estimation.html#whole-body-keypoint-ids).
 
 By using the Pose Estimation Model and obtaining the respective pose coordinates, a [custom](https://peekingduck.readthedocs.io/en/stable/getting_started/03_custom_nodes.html#) "Dabble" node was created with a set of rules to determine if the detected pose coordinates are indeed from a Dab Move as shown below:
 <br><img src="./images/dabbing.png" alt="A Dabbing dance move" width=180>
@@ -131,9 +132,9 @@ _Image by <a href="https://pixabay.com/users/mohamed_hassan-5229782/?utm_source=
 In addition, if any of the keypoints coordinates - wrists AND shoulders AND elbows AND (left eye or right eye or nose) is __missing__ from the pose estimation output, it will __not__ detect any dab action.
 
 #### 4.1.2 Scoring
-The scoring of each dab is based on how close the detected poses are to each of the rules above. For checking whether the arms are bent or straight and whether the lower arms are parallel, cosine similarity functions are used. 
+The scoring of each dab is based on how close the detected poses are to each of the rules above. For checking whether the arms are bent or straight and whether the lower arms are parallel, cosine similarity functions are used.
 
-For checking if the head is close to the wrist or elbow, L2-norm distance is used and it is normalized by the length of the lower arm. 
+For checking if the head is close to the wrist or elbow, L2-norm distance is used and it is normalized by the length of the lower arm.
 
 Each of the scores has to be above or below certain predefined threshold to be considered successful. The set of predefined thresholds can be changed in the configuration file ```src\custom_nodes\configs\dabble\dab_recognition.yml``` in the following:
 ```yaml
@@ -145,7 +146,7 @@ thresholds:
 ```
 The final score is the weighted sum of the score from the individual rules. The weightage of each score for the respective rules can be changed by the user in the yaml configuration file ```src\custom_nodes\configs\dabble\dab_recognition.yml``` in the following:
 ```yaml
-score_weightage: 
+score_weightage:
   straight_arm: 0.25
   bent_arm: 0.25
   head_wrist: 0.25
@@ -158,19 +159,20 @@ It is to note that the lower bound of the score is dependent on the threshold be
 In addition, the sum of the score weightage do not need to be 1. A function has been included in the process to automatically normalize the total score weightage to 1.
 
 ### 4.2 Bus Passenger Counting
-An overview of the passenger counting algorithm can be illustrated in the flowchart below
-![Algorithm flowchat](./images/flowchart.png)
+An overview of the passenger counting algorithm can be illustrated in the flowchart below:
+
+![Algorithm flowchart](./images/flowchart.png)
 
 #### 4.2.1 Challenges
 Finding out how many passengers boarded a particular bus can be tricky and it can be sensitive to the **performance of the object detection model** as well as the **tracker's performance**. Some of the problems and challenges are as follows:
-1. Occulsion of persons and buses. 
+1. Occlusion of persons and buses.
     * Object detection model unable to detect person or bus. This leads to under-counting
 2. False positives from detection model.
     * Mistaken cars for buses (Can be tuned by increasing the score threshold for the object detection model)
     * Mistaken 2 buses as 1 bus (Can be tuned by reducing IOU threshold)
 3. "Ghost" bboxes from tracker
     * Can be due to erroneous detections from object detection model
-4. ID switching 
+4. ID switching
     * Can be due to wrong matching result between detection bboxes and predicted bboxes from tracker
 5. Bounding boxes "jumping around"
     * Moving average is used to get a smoother motion of the tracked objects
@@ -178,15 +180,15 @@ Finding out how many passengers boarded a particular bus can be tricky and it ca
 #### 4.2.2 Tracking and Counting Strategies
 In view of the above challenges, besides finetuning or obtaining a better model or tracker, a strategy to count the passengers and to manage the person tracker objects has been devised.
 
-Each tracker object is considered to be a new object only if it has not been tracked before. i.e. tracker ID not found in list. Also, for person object, if the previous bbox of a specific ID has a IOU that is below certain threshold, it is considered to be a new object in the subsequent frame. This is to tackle the problem of ID switching. For object IDs that were present in previous frame but absent in current frame, they will be removed from the list and deemed as being left from the view of the camera (This is because there is no object re-ID and ID numbers are being reused by the tracker everytime it sees a 'new' object). 
+Each tracker object is considered to be a new object only if it has not been tracked before. i.e. tracker ID not found in list. Also, for person object, if the previous bbox of a specific ID has an IOU that is below certain threshold, it is considered to be a new object in the subsequent frame. This is to tackle the problem of ID switching. For object IDs that were present in previous frame but absent in current frame, they will be removed from the list and deemed as being left from the view of the camera (This is because there is no object re-ID and ID numbers are being reused by the tracker every time it sees a 'new' object).
 
 For a person to be considered to be boarded a certain bus, there are several requirements:
 1. The centroid of the person bbox must first be on the right side of the door (a virtual line offset from the bus), and subsequently appear on the left side.
-2. The size of the person bounding box with respect to the bus's bounding box must be within certain threshold. This is to prevent over counting for people walking behind or in front of the bus. 
+2. The size of the person bounding box with respect to the bus's bounding box must be within certain threshold. This is to prevent over counting for people walking behind or in front of the bus.
 3. The centroid of the person must be within the y values of the "bus door"
 
 #### 4.2.3 CSV Output
-A CSV file with the number of passengers boarded for each bus is saved everytime the programme ends. The output path can be changed in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
+A CSV file with the number of passengers boarded for each bus is saved every time the programme ends. The output path can be changed in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
 
 |   | Number of Passengers | Recorded Time |
 |---|----------------------|---------------|
@@ -198,6 +200,4 @@ The recorded time is the time when the bus was first captured by the detection m
 **Author**
 * [Eric Kwok](https://github.com/eric-kwok-nt)
 
-This mini-project was created using the [PeekingDuck](https://github.com/aimakerspace/PeekingDuck) library and the [SORT_OpenCV_Trackers](https://github.com/alexgoft/SORT_OpenCV_Trackers) library.
-
-
+This mini-project was created using [PeekingDuck](https://github.com/aimakerspace/PeekingDuck), [SORT_OpenCV_Trackers](https://github.com/alexgoft/SORT_OpenCV_Trackers) and [DeepSORT](https://github.com/nwojke/deep_sort) tracker libraries.

@@ -8,6 +8,8 @@ dependencies:
     - click==7.1.2
     - colorama==0.4.4
     - cookiecutter==1.7.3
+    - easydict
+    - lxml
     - numpy==1.22.2
     - omegaconf
     - opencv-python
