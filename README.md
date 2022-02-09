@@ -196,7 +196,9 @@ A CSV file with the number of passengers boarded for each bus is saved every tim
 
 The recorded time is the time when the bus was first captured by the detection model.
 
-## 5. Author and Acknowledgements
+## 5. License
+The PeekingDuck library is under the open source [Apache License 2.0](https://github.com/aimakerspace/PeekingDuck/blob/dev/LICENSE) while the DeepSORT library is under the [GPL-3.0 License](https://github.com/nwojke/deep_sort/blob/master/LICENSE) 
+## 6. Author and Acknowledgements
 **Author**
 * [Eric Kwok](https://github.com/eric-kwok-nt)
 
