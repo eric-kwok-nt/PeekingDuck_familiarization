@@ -20,7 +20,6 @@ There are several assumptions to this problem:
 ## 2. Project Organization
 ------------
     .
-    ├── LICENSE
     ├── README.md
     ├── config                    -> Contains yaml config files for various experiments
     │   ├── dab_recoginition      
