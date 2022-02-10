@@ -183,32 +183,32 @@ class Node(AbstractNode):
         """
         tracks = []
         tracks_ids = []
-        if len(bboxes) > 0:
-            bboxes_rescaled = np.array(self.bboxes_rescaling(bboxes))
 
-            if not self.deep_sort:
-                tracks, tracks_ids = mot_tracker.update_and_get_tracks(bboxes_rescaled, self.image_)
-                tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
-            else:
-                bboxes_rescaled[:,[2,3]] = bboxes_rescaled[:,[2,3]] - bboxes_rescaled[:,[0,1]]
-                
-                features = self.encoder(self.image_, bboxes_rescaled)
-                detections = [
-                    Detection(bbox, score, class_name, feature) \
-                    for bbox, score, class_name, feature in zip(bboxes_rescaled, scores, names, features)
-                ]
-                mot_tracker.predict()
-                mot_tracker.update(detections)
-                for track in mot_tracker.tracks:
-                    if not track.is_confirmed() or track.time_since_update > default_max_age:
-                        continue 
-                    tracks.append(track.to_tlbr())
-                    tracks_ids.append(track.track_id)
+        bboxes_rescaled = np.array(self.bboxes_rescaling(bboxes))
 
-                tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
-            if len(tracks) > 0:
-                tracks[:,[0,2]] /= self.img_n_cols
-                tracks[:,[1,3]] /= self.img_n_rows
+        if not self.deep_sort:
+            tracks, tracks_ids = mot_tracker.update_and_get_tracks(bboxes_rescaled, self.image_)
+            tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
+        else:
+            bboxes_rescaled[:,[2,3]] = bboxes_rescaled[:,[2,3]] - bboxes_rescaled[:,[0,1]]
+            
+            features = self.encoder(self.image_, bboxes_rescaled)
+            detections = [
+                Detection(bbox, score, class_name, feature) \
+                for bbox, score, class_name, feature in zip(bboxes_rescaled, scores, names, features)
+            ]
+            mot_tracker.predict()
+            mot_tracker.update(detections)
+            for track in mot_tracker.tracks:
+                if not track.is_confirmed() or track.time_since_update > default_max_age:
+                    continue 
+                tracks.append(track.to_tlbr())
+                tracks_ids.append(track.track_id)
+
+            tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
+        if len(tracks) > 0:
+            tracks[:,[0,2]] /= self.img_n_cols
+            tracks[:,[1,3]] /= self.img_n_rows
         return tracks, tracks_ids
 
 
