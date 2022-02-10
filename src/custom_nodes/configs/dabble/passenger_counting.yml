@@ -11,8 +11,8 @@ output:
 
 bus_tracker:
   iou_threshold: 0.85         # IOU below which is considered moving
-  door_height_proportion: 0.6 # Height of "door" from the bottom of the bus bbox. A factor of bus width
-  door_offset_height: 0.2     # The height offset of the door from the bottom of the bus bbox to the bottom of the "door". A factor of bus width
+  door_height_proportion: 0.7 # Height of "door" from the bottom of the bus bbox. A factor of bus width
+  door_offset_height: 0.15     # The height offset of the door from the bottom of the bus bbox to the bottom of the "door". A factor of bus width
   ma_window: 10               # Moving average window size to track the previous bounding box location
   look_back_period: 10        # Period to look back to get the previous bbox
   draw_boundary: True         # Whether to draw the "door", a vertical line beyond which a passenger is considered boarded
@@ -26,6 +26,6 @@ person_tracker:
 person_to_bus_ratio: [0.4, 0.8]  
 # Range of person bbox height to bus bbox width ratio to be considered as boarding passenger
 indicate_num_passengers: True # Whether to indicate the number of boarded passengers on the bus bbox
-record_to_csv: False          # Whether to record the number of passengers in a csv file
+record_to_csv: True          # Whether to record the number of passengers in a csv file
 csv_path: "./data/csv/bus_record.csv"
 write_mode: "w"               # Whether to overwrite 'w' or append 'a' existing file
