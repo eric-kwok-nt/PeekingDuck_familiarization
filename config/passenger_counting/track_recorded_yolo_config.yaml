@@ -11,7 +11,7 @@ nodes:
     yolo_iou_threshold: 0.5
     yolo_score_threshold: 0.4
 
-- custom_nodes.dabble.person_tracker
+- custom_nodes.dabble.person_bus_tracker
 - custom_node.dabble.passenger_counting
 - dabble.fps
 - draw.bbox

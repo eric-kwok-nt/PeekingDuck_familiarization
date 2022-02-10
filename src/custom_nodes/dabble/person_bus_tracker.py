@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Union, Callable, Tuple
-
 from peekingduck.pipeline.nodes.node import AbstractNode
 from .sort_tracker.sort import Sort
 from .utils.draw_image import include_text
@@ -24,7 +23,7 @@ class Node(AbstractNode):
     """
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
-        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/dabble.person_tracker")
+        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/dabble.person_bus_tracker")
         super().__init__(config, node_path=node_path, **kwargs)
         # super().__init__(config, node_path=__name__, **kwargs)
         if not self.deep_sort:
@@ -80,8 +79,16 @@ class Node(AbstractNode):
         self.img_n_rows, self.img_n_cols, _ = self.image_.shape
 
         # Separates person bboxes with bus bboxes and tracks them separately
-        person_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='person'])
-        bus_bboxes = deepcopy(inputs["bboxes"][inputs["bbox_labels"]=='bus'])
+        person_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='person']
+        person_scores = inputs['bbox_scores'][inputs["bbox_labels"]=='person']
+        bus_bboxes = inputs["bboxes"][inputs["bbox_labels"]=='bus']
+        bus_scores = inputs['bbox_scores'][inputs["bbox_labels"]=='bus']
+
+        # Filtering the detection bboxes separately
+        person_bboxes = person_bboxes[person_scores >= self.person_score_threshold]
+        bus_bboxes = bus_bboxes[bus_scores >= self.bus_score_threshold]
+        person_scores = person_scores[person_scores >= self.person_score_threshold]
+        bus_scores = bus_scores[bus_scores >= self.bus_score_threshold]
 
         # In puts to tracker is different for SORT and Deep SORT algorithm
         if not self.deep_sort:
@@ -92,14 +99,14 @@ class Node(AbstractNode):
                 "bboxes": person_bboxes, 
                 "mot_tracker": self.mot_person_tracker, 
                 "names": ["person" for _ in range(len(person_bboxes))],
-                "scores": deepcopy(inputs['bbox_scores'][inputs["bbox_labels"]=='person']),
+                "scores": person_scores,
                 "default_max_age": self.deep_sort_person_tracker["default_max_age"]
             }
             kwargs_bus = {
                 "bboxes": bus_bboxes, 
                 "mot_tracker": self.mot_bus_tracker, 
                 "names": ["bus" for _ in range(len(bus_bboxes))],
-                "scores": deepcopy(inputs['bbox_scores'][inputs["bbox_labels"]=='bus']),
+                "scores": bus_scores,
                 "default_max_age": self.deep_sort_bus_tracker["default_max_age"]
             }
 
@@ -157,7 +164,8 @@ class Node(AbstractNode):
 
         # Whether to draw detection bboxes
         if self.detection["draw_bbox"]:
-            self._draw_rectangle(inputs["bboxes"])
+            self._draw_rectangle(person_bboxes, scores=person_scores)
+            self._draw_rectangle(bus_bboxes, scores=bus_scores)
 
         return outputs
 
@@ -212,7 +220,7 @@ class Node(AbstractNode):
         return tracks, tracks_ids
 
 
-    def _draw_rectangle(self, bboxes: Union[list, np.ndarray], color=[255,255,255], thickness=2):
+    def _draw_rectangle(self, bboxes: Union[list, np.ndarray], color=[255,255,255], thickness=2, scores=None):
         """Draws the bboxes on image
 
         Args:
@@ -221,7 +229,7 @@ class Node(AbstractNode):
             thickness (int, optional): Thickness of bbox. Defaults to 2.
         """
         bboxes_rescaled = self.bboxes_rescaling(bboxes)
-        for box in bboxes_rescaled:
+        for box, score in zip(bboxes_rescaled, scores):
             self.image_ = cv2.rectangle(
                 self.image_, 
                 pt1=(int(box[0]), int(box[1])), 
@@ -231,6 +239,9 @@ class Node(AbstractNode):
                 )
             if self.detection["include_tag"]:
                 text = 'Det'
+                if self.detection["include_score"]:
+                    assert scores is not None, "Please input detection scores if include_score is True"
+                    text += f': {score:.2f}'
                 # self._include_text(box, text, color)
                 include_text(self.image_, box, text, color, pos='bottom')
 

@@ -1,7 +1,5 @@
 from typing import Any, Dict, Union
-
 from peekingduck.pipeline.nodes.node import AbstractNode
-
 import os
 import ntpath
 import numpy as np

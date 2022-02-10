@@ -98,7 +98,7 @@ General configurations can be changed in the config file: ```./config/passenger_
 4. Whether to output the processed frames to the screen or save them as a video file
 5. Output path of the video file (Not applicable when output to the screen option is True)
 
-Specific parameters for tracking are in the config file: ```./src/custom_nodes/configs/dabble/person_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
+Specific parameters for tracking are in the config file: ```./src/custom_nodes/configs/dabble/person_bus_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
 1. Whether to use Deep SORT or SORT algorithm
 1. Bus / Person tracking specific parameters such as the number of frames a tracker should stay without being updated and the type of tracker being used.
 2. Whether multithreading is used for tracking the bus and person respectively

@@ -8,7 +8,7 @@ from peekingduck.pipeline.nodes.model import yolo
 from peekingduck.pipeline.nodes.dabble import fps
 from peekingduck.pipeline.nodes.draw import bbox, tag
 from peekingduck.pipeline.nodes.output import media_writer, screen
-from src.custom_nodes.dabble import person_tracker, passenger_counting
+from src.custom_nodes.dabble import person_bus_tracker, passenger_counting
 import pdb
 
 
@@ -28,7 +28,7 @@ def main(args) -> None:
         yolo_iou_threshold=conf['model.yolo'].yolo_iou_threshold,
         yolo_score_threshold=conf['model.yolo'].yolo_score_threshold
     )
-    person_tracker_node = person_tracker.Node()
+    person_bus_tracker_node = person_bus_tracker.Node()
     passenger_counting_node = passenger_counting.Node()
     fps_node = fps.Node()
     draw_node = bbox.Node()
@@ -46,7 +46,7 @@ def main(args) -> None:
     runner = Runner(nodes=[
         input_node,
         yolo_node,
-        person_tracker_node,
+        person_bus_tracker_node,
         passenger_counting_node,
         fps_node,
         draw_node,

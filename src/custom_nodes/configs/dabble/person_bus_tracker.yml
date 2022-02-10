@@ -16,6 +16,9 @@ output:
 
 deep_sort: False
 
+person_score_threshold: 0.4           # Detection score threshold for person object, below which the bbox will be filtered
+bus_score_threshold: 0.4              # Detection score threshold for bus object
+
 sort_person_tracker:                  # For SORT algorithm
   DEFAULT_MAX_AGE: 5                  # How many frames should a tracker stay without update and without successfully getting tracking state
   DEFAULT_MIN_HITS: 4                 # Minimum hits to create a new tracker object
@@ -40,9 +43,9 @@ deep_sort_bus_tracker:                # For Deep SORT algorithm
   nn_budget: null
   default_max_age: 100
 
-
 multithread: True                     # Multithreading for tracking. One thread for bus the other for person
 show_class_in_tag: False              # Whether to show the class name in the bbox
 detection:            
   draw_bbox: True                     # Whether to draw detection bboxes
   include_tag: True                   # Whether to include tag to indicate the bbox is for detection
+  include_score: True                 # Whether to include confidence score in the tag
