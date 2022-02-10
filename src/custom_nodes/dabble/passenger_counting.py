@@ -111,9 +111,9 @@ class Node(AbstractNode):
                     text = 'stationary'
                     bus_dict[id].door_line(
                         offset=self.bus_tracker['boundary_offset'],
+                        image=self.image_,
                         rescale_function=self.rescale_function,
                         draw_door=self.bus_tracker['draw_boundary'],
-                        image=self.image_
                     )
                 else:
                     text='moving'
@@ -131,6 +131,7 @@ class Node(AbstractNode):
                     current_bbox=copy(self.bus_tracks[idx]), 
                     iou_threshold=self.bus_tracker['iou_threshold'],
                     door_height_proportion=self.bus_tracker['door_height_proportion'],
+                    door_offset_height=self.bus_tracker['door_offset_height'],
                     ma_window=self.bus_tracker['ma_window'],
                     look_back_period=self.bus_tracker['look_back_period']
                 )
@@ -174,10 +175,11 @@ class Node(AbstractNode):
     def _count_passenger(self):
         """Count the number of passengers based on the heuristics
         """
+        img_rows, img_cols, _ = self.image_.shape
         for _, bus_obj in self.bus_dict.items():
             if bus_obj.stationary:
                 for _, person_obj in self.person_dict.items():
-                    person_bus_height_r = person_obj.height / bus_obj.height
+                    person_bus_height_r = person_obj.height / (bus_obj.width*img_cols/img_rows)
                     if (person_obj.prev_centroid[0] < bus_obj.bus_door[0]) or \
                         (person_obj.prev_centroid[1] < bus_obj.bus_door[1][0]) or \
                         (person_obj.prev_centroid[1] > bus_obj.bus_door[1][1]) or \

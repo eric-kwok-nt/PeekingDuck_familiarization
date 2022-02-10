@@ -28,6 +28,7 @@ class Tracked_Obj:
         self.iou_threshold = iou_threshold
         self.prev_centroid = self.find_centroid(self.prev_bbox)  
         self.cur_centroid = None
+        self.width = self.prev_bbox[2] - self.prev_bbox[0]
         self.height = self.prev_bbox[3] - self.prev_bbox[1]
         self.ma_window = ma_window
         self.ma_bbox = [self.prev_bbox for _ in range(self.ma_window)]
@@ -56,6 +57,7 @@ class Tracked_Obj:
         self.count += 1
         self.cur_bbox = np.mean(self.ma_bbox, axis=0)
 
+        self.width = self.cur_bbox[2] - self.cur_bbox[0]
         self.height = self.cur_bbox[3] - self.cur_bbox[1]
 
         self.prev_centroid = self.find_centroid(self.prev_bbox)
@@ -125,12 +127,14 @@ class Bus(Tracked_Obj):
         self, 
         current_bbox: Union[list, np.ndarray], 
         iou_threshold: float, 
-        door_height_proportion: float,          # Proportion of height of door with respective to the height of bus
+        door_height_proportion: float,          # Proportion of height of door with respective to the width of bus
+        door_offset_height: float,                  
         ma_window=10,
         look_back_period=5
     ):
         super().__init__(current_bbox, iou_threshold, ma_window, look_back_period)
         self.door_height_proportion = door_height_proportion
+        self.door_offset_height = door_offset_height
         self.bus_door = None    # (x, (y1, y2))
         self.passengers: Set[Person] = set()
         self.stationary = False
@@ -147,25 +151,25 @@ class Bus(Tracked_Obj):
     def door_line(
             self,
             offset: float,
+            image: np.ndarray,
             rescale_function=None,
             draw_door=False, 
-            image=None
         ) -> None:
         """Creates the virtual door line and optionally draws it on the image. 
 
         Args:
             offset (float): How much offset as a fraction of the width of bus bbox
+            image (np.ndarray): Image to be drawn on
             rescale_function (Callable[list], optional): Rescale function from the person_tracker node. Defaults to None.
             draw_door (bool, optional): Whether to draw the virtual door line on image. Defaults to False.
-            image (np.ndarray, optional): Image to be drawn on. Defaults to None.
         """
-        offset *= (self.cur_bbox[2] - self.cur_bbox[0]) # Assume door is vertically straight on the right side
+        img_rows, img_cols, _ = image.shape
+        offset *= self.width # Assume door is vertically straight on the right side
         x = self.cur_bbox[2] + offset
-        y2 = self.cur_bbox[3]
-        y1 = y2 - self.door_height_proportion * self.height
+        y1 = self.cur_bbox[3] - self.door_height_proportion * (self.width*img_cols/img_rows)  # Top of door line
+        y2 = self.cur_bbox[3] - self.door_offset_height * (self.width*img_cols/img_rows)      # Bottom fo door line
             
         if draw_door:
-            assert(image is not None), "Please provide image to draw the door on"
             assert(rescale_function is not None), "Please provide rescale function for drawing the door"
             rescaled_tracks = rescale_function([(x, y1, x, y2)])[0]
             cv2.line(
