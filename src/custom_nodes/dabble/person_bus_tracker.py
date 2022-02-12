@@ -198,7 +198,8 @@ class Node(AbstractNode):
             tracks, tracks_ids = mot_tracker.update_and_get_tracks(bboxes_rescaled, self.image_)
             tracks, tracks_ids = np.array(tracks), np.array(tracks_ids)
         else:
-            bboxes_rescaled[:,[2,3]] = bboxes_rescaled[:,[2,3]] - bboxes_rescaled[:,[0,1]]
+            if len(bboxes_rescaled) != 0:
+                bboxes_rescaled[:,[2,3]] = bboxes_rescaled[:,[2,3]] - bboxes_rescaled[:,[0,1]]
             
             features = self.encoder(self.image_, bboxes_rescaled)
             detections = [
