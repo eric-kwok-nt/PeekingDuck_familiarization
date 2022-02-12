@@ -6,8 +6,12 @@ input:
   - "person_ids"
   - "rescale_function"
   - "saved_video_fps"
+  - "draw_pipeline"
+  - "pipeline_end"
 output: 
-  - "buses"
+  - "df_records"
+  - "draw_pipeline"
+  - "write_now"
 
 bus_tracker:
   iou_threshold: 0.85         # IOU below which is considered moving
@@ -26,6 +30,4 @@ person_tracker:
 person_to_bus_ratio: [0.4, 0.8]  
 # Range of person bbox height to bus bbox width ratio to be considered as boarding passenger
 indicate_num_passengers: True # Whether to indicate the number of boarded passengers on the bus bbox
-record_to_csv: True          # Whether to record the number of passengers in a csv file
-csv_path: "./data/csv/bus_record.csv"
-write_mode: "w"               # Whether to overwrite 'w' or append 'a' existing file
+

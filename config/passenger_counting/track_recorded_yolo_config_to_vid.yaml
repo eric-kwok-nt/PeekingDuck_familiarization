@@ -14,6 +14,7 @@ nodes:
 - custom_nodes.dabble.person_bus_tracker
 - custom_node.dabble.passenger_counting
 - dabble.fps
+- custom_nodes.draw.custom_draw
 - draw.bbox
 - draw.tag
 # - draw.legend:

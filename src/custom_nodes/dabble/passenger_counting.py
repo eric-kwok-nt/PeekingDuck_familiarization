@@ -1,7 +1,6 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict
 from peekingduck.pipeline.nodes.node import AbstractNode
 import os
-import ntpath
 import numpy as np
 from .utils.tracker import Person, Bus
 from .utils.draw_image import include_text
@@ -34,7 +33,9 @@ class Node(AbstractNode):
         self.frame = 0
         self.fps_ = None
         self.buses_records = dict()
-
+        self.draw_pipeline = []
+        self.write_now = False
+        self.bus_record_df = None
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
@@ -46,6 +47,7 @@ class Node(AbstractNode):
             outputs (dict): Dictionary with keys "buses".
         """
         self.frame += 1
+        self.draw_pipeline = inputs["draw_pipeline"]
         self.bus_tracks = deepcopy(inputs["bus_tracks"])
         self.bus_ids = copy(inputs["bus_ids"])
         self.person_tracks = deepcopy(inputs["person_tracks"])
@@ -64,34 +66,22 @@ class Node(AbstractNode):
                     self.bus_ids = np.array(self.bus_ids)
                 bus_bbox = self.rescaled_bus_tracks[np.where(self.bus_ids==bus_id)[0][0]]
                 text = f"n_passengers: {num_passengers}"
-                include_text(self.image_, bus_bbox, text, [255,255,255], 'top_left_upper')
+                include_text_kwargs = {
+                    "image": self.image_, 
+                    "bbox": bus_bbox, 
+                    "tag": text, 
+                    "colour": [255,255,255], 
+                    "pos": 'top_left_upper',
+                }
+                self.draw_pipeline.append((include_text, include_text_kwargs))
+        if inputs["pipeline_end"]:
+            self.bus_record_df = self.save_data()
 
-        return {"buses": self.bus_dict}
-
-    def save_data(self, mode='w'):
-        """Saves the number of passengers in each bus, the timing in the video when the bus appears to a csv file
-
-        Args:
-            mode (str, optional): Whether to write to a new file or append to an existing file. 
-            Defaults to 'w'.
-        """
-        records_to_save = defaultdict(list)
-        indices = []
-        if self.record_to_csv:
-            self.logger.info("Saving bus record to CSV file!")
-            base, _ = ntpath.split(self.csv_path)
-            # Create make new directories if the path does not exist
-            if not os.path.exists(base):
-                os.makedirs(base)
-                self.logger.info(f"Created folder '{base}'")
-            # Iterate each bus object and save to a DataFrame
-            for i, bus in enumerate(self.buses_records.keys()):
-                records_to_save["Number of Passengers"].append(len(bus.passengers))
-                min, sec = self.buses_records[bus]
-                records_to_save["Recorded Time"].append(f"{min}:{sec}")
-                indices.append(str(i))
-            df = pd.DataFrame(data=records_to_save, index=indices)
-            df.to_csv(self.csv_path, mode=mode)
+        return {
+            "df_records": self.bus_record_df,
+            "draw_pipeline": self.draw_pipeline,
+            "write_now": self.write_now,
+            }
 
     def _update_bus(self):
         """Updates the bus objects. If bus object already exists, update the existing object.
@@ -116,13 +106,14 @@ class Node(AbstractNode):
                 else:
                     text='moving'
                 # Indicates in the image whether a bus is moving
-                include_text(
-                    self.image_, 
-                    self.rescaled_bus_tracks[idx], 
-                    text, 
-                    colour=[255,255,255], 
-                    pos='top_left'
-                )
+                include_text_kwargs = {
+                    "image": self.image_, 
+                    "bbox": self.rescaled_bus_tracks[idx], 
+                    "tag": text, 
+                    "colour": [255,255,255], 
+                    "pos": 'top_left',
+                }
+                self.draw_pipeline.append((include_text, include_text_kwargs))
             else:
                 # Creates a new object if bus object does not exist
                 bus_dict[id] = Bus(
@@ -196,7 +187,17 @@ class Node(AbstractNode):
                         # and is currently on the left side and within the height of door
                         bus_obj.passengers.add(person_obj)
 
-
-    def __del__(self):
-        # Saves the data before the passenger counting instance is destroyed
-        self.save_data(mode=self.write_mode)
+    def save_data(self):
+        """Saves the number of passengers in each bus, the timing in the video when the bus appears to a csv file
+        """
+        self.logger.info("Saving Number of passengers to DataFrame...")
+        records_to_save = defaultdict(list)
+        indices = []
+        # Iterate each bus object and save to a DataFrame
+        for i, bus in enumerate(self.buses_records.keys()):
+            records_to_save["Number of Passengers"].append(len(bus.passengers))
+            min, sec = self.buses_records[bus]
+            records_to_save["Recorded Time"].append(f"{min}:{sec}")
+            indices.append(str(i))
+        df = pd.DataFrame(data=records_to_save, index=indices)
+        return df

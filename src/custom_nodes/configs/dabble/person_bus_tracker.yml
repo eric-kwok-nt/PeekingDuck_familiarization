@@ -13,6 +13,7 @@ output:
   - "bus_ids"
   - "person_ids"
   - "rescale_function"
+  - "draw_pipeline"
 
 deep_sort: False
 

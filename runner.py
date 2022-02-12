@@ -9,6 +9,8 @@ from peekingduck.pipeline.nodes.dabble import fps
 from peekingduck.pipeline.nodes.draw import bbox, tag
 from peekingduck.pipeline.nodes.output import media_writer, screen
 from src.custom_nodes.dabble import person_bus_tracker, passenger_counting
+from src.custom_nodes.draw import custom_draw
+from src.custom_nodes.output import record_df_to_csv
 import pdb
 
 
@@ -31,8 +33,11 @@ def main(args) -> None:
     person_bus_tracker_node = person_bus_tracker.Node()
     passenger_counting_node = passenger_counting.Node()
     fps_node = fps.Node()
+    draw_custom_node = custom_draw.Node()
     draw_node = bbox.Node()
     tag_node = tag.Node()
+    if conf.record_to_csv:
+        bus_record_node = record_df_to_csv.Node()
     if conf.output_to_screen:
         output_node = screen.Node()
     else:
@@ -43,16 +48,31 @@ def main(args) -> None:
             log.error("If output_to_screen is False, output_dir under output.media_writer must be entered.")
             raise
 
-    runner = Runner(nodes=[
-        input_node,
-        yolo_node,
-        person_bus_tracker_node,
-        passenger_counting_node,
-        fps_node,
-        draw_node,
-        tag_node, 
-        output_node
-    ])
+    if conf.record_to_csv:
+        runner = Runner(nodes=[
+            input_node,
+            yolo_node,
+            person_bus_tracker_node,
+            passenger_counting_node,
+            fps_node,
+            draw_custom_node,
+            draw_node,
+            tag_node, 
+            bus_record_node,
+            output_node,
+        ])
+    else: 
+        runner = Runner(nodes=[
+            input_node,
+            yolo_node,
+            person_bus_tracker_node,
+            passenger_counting_node,
+            fps_node,
+            draw_custom_node,
+            draw_node,
+            tag_node, 
+            output_node,
+        ])
 
     runner.run()
 

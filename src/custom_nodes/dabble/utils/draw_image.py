@@ -6,7 +6,8 @@ from typing import Union
 def include_text(
     image: np.ndarray, 
     bbox: Union[np.ndarray, list], 
-    tag: str, colour=[255,255,255], 
+    tag: str, 
+    colour=[255,255,255], 
     pos='bottom'
 ):
     """To add text to the various locations of the bbox

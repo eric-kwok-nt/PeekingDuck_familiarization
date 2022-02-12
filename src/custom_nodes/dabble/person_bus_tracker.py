@@ -60,6 +60,7 @@ class Node(AbstractNode):
         self.img_n_rows = None 
         self.img_n_cols = None
         self.frame = 0
+        self.draw_pipeline = None
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
@@ -72,7 +73,8 @@ class Node(AbstractNode):
         """
         bboxes = []
         obj_tags = []
-        bbox_labels = []        
+        bbox_labels = []
+        self.draw_pipeline = []        
         que_person = Queue()
         que_bus = Queue()
         self.image_ = inputs['img']
@@ -150,6 +152,15 @@ class Node(AbstractNode):
             bbox_labels = np.array(["bus" for _ in bus_tracks])
             bboxes = bus_tracks
 
+        # Whether to draw detection bboxes
+        if self.detection["draw_bbox"]:
+            draw_person_kwargs = {"bboxes": person_bboxes, "scores": person_scores}
+            draw_bus_kwargs = {"bboxes": bus_bboxes, "scores": bus_scores}
+            self._draw_rectangle(**draw_person_kwargs)
+            self._draw_rectangle(**draw_bus_kwargs)
+            # self.draw_pipeline.append((self._draw_rectangle, draw_person_kwargs))
+            # self.draw_pipeline.append((self._draw_rectangle, draw_bus_kwargs))
+
         outputs = {
             "bboxes": deepcopy(bboxes),
             "obj_tags": obj_tags,
@@ -158,14 +169,10 @@ class Node(AbstractNode):
             "person_tracks": deepcopy(person_tracks),
             "bus_ids": copy(bus_tracks_ids),
             "person_ids": copy(person_tracks_ids),
-            "rescale_function": self.bboxes_rescaling
+            "rescale_function": self.bboxes_rescaling,
+            "draw_pipeline": self.draw_pipeline,
         }
         self.frame += 1
-
-        # Whether to draw detection bboxes
-        if self.detection["draw_bbox"]:
-            self._draw_rectangle(person_bboxes, scores=person_scores)
-            self._draw_rectangle(bus_bboxes, scores=bus_scores)
 
         return outputs
 
@@ -231,20 +238,30 @@ class Node(AbstractNode):
         """
         bboxes_rescaled = self.bboxes_rescaling(bboxes)
         for box, score in zip(bboxes_rescaled, scores):
-            self.image_ = cv2.rectangle(
-                self.image_, 
-                pt1=(int(box[0]), int(box[1])), 
-                pt2=(int(box[2]), int(box[3])), 
-                color=color, 
-                thickness=thickness
-                )
+            draw_rect_kwargs = {
+                "img": self.image_,
+                "pt1": (int(box[2]), int(box[3])),
+                "pt2": (int(box[2]), int(box[3])),
+                "color": color,
+                "thickness": thickness,
+            }
+            self.draw_pipeline.append((cv2.rectangle, draw_rect_kwargs))
+            # cv2.rectangle(**draw_rect_kwargs)
             if self.detection["include_tag"]:
                 text = 'Det'
                 if self.detection["include_score"]:
                     assert scores is not None, "Please input detection scores if include_score is True"
                     text += f': {score:.2f}'
-                # self._include_text(box, text, color)
-                include_text(self.image_, box, text, color, pos='bottom')
+ 
+                det_text_kwargs = {
+                    "image": self.image_,
+                    "bbox": box,
+                    "tag": text,
+                    "colour": color,
+                    "pos": 'bottom',
+                }
+                self.draw_pipeline.append((include_text, det_text_kwargs))
+                # include_text(**det_text_kwargs)
 
     def bboxes_rescaling(self, bboxes: List[Union[list, tuple]]) -> List[Union[list, tuple]]:
         """Rescale the normalized bboxes to the original scale.
