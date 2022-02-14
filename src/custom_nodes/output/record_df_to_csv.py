@@ -13,7 +13,9 @@ class Node(AbstractNode):
     """
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
-        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/output.record_df_to_csv")
+        node_path = os.path.join(
+            os.getcwd(), "src/custom_nodes/configs/output.record_df_to_csv"
+        )
         super().__init__(config, node_path=node_path, **kwargs)
         # super().__init__(config, node_path=__name__, **kwargs)
 
@@ -25,7 +27,9 @@ class Node(AbstractNode):
         Returns:
             outputs (dict): Empty Dictionary.
         """
-        if (inputs["write_now"] or inputs["pipeline_end"]) and (inputs["df_records"] is not None):
+        if (inputs["write_now"] or inputs["pipeline_end"]) and (
+            inputs["df_records"] is not None
+        ):
             self.logger.info("Saving DataFrame to CSV file!")
             base, _ = ntpath.split(self.csv_path)
             # Create make new directories if the path does not exist

@@ -12,7 +12,9 @@ class Node(AbstractNode):
     """
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
-        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/draw.custom_draw")
+        node_path = os.path.join(
+            os.getcwd(), "src/custom_nodes/configs/draw.custom_draw"
+        )
         super().__init__(config, node_path=node_path, **kwargs)
         # super().__init__(config, node_path=__name__, **kwargs)
 
@@ -32,4 +34,3 @@ class Node(AbstractNode):
             tup[0](**tup[1])
         inputs["draw_pipeline"] = []
         return {}
-        

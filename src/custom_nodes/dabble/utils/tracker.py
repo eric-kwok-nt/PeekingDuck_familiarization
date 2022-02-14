@@ -7,13 +7,12 @@ import pdb
 
 
 class Tracked_Obj:
-
     def __init__(
-        self, 
-        current_bbox: Union[list, np.ndarray], 
-        iou_threshold: float, 
-        ma_window: int, 
-        look_back_period: int
+        self,
+        current_bbox: Union[list, np.ndarray],
+        iou_threshold: float,
+        ma_window: int,
+        look_back_period: int,
     ):
         """Parent class of Bus and Person object
 
@@ -23,10 +22,10 @@ class Tracked_Obj:
             ma_window (int): The number of frames of the moving average window for calculating the bounding boxes
             look_back_period (int): How many frames to look back for calculating the previous bbox location
         """
-        self.prev_bbox = copy(current_bbox) # bbox before
-        self.cur_bbox = None # bbox after
+        self.prev_bbox = copy(current_bbox)  # bbox before
+        self.cur_bbox = None  # bbox after
         self.iou_threshold = iou_threshold
-        self.prev_centroid = self.find_centroid(self.prev_bbox)  
+        self.prev_centroid = self.find_centroid(self.prev_bbox)
         self.cur_centroid = None
         self.width = self.prev_bbox[2] - self.prev_bbox[0]
         self.height = self.prev_bbox[3] - self.prev_bbox[1]
@@ -88,8 +87,8 @@ class Tracked_Obj:
         Returns:
             np.ndarray: The centroid of bbox
         """
-        x = (bbox[0] + bbox[2])/2
-        y = (bbox[1] + bbox[3])/2
+        x = (bbox[0] + bbox[2]) / 2
+        y = (bbox[1] + bbox[3]) / 2
         return np.array([x, y])
 
     # @staticmethod
@@ -101,13 +100,12 @@ class Tracked_Obj:
 
 
 class Person(Tracked_Obj):
-
     def __init__(
-        self, 
-        current_bbox: Union[list, np.ndarray], 
-        iou_threshold: float, 
-        ma_window=2, 
-        look_back_period=1
+        self,
+        current_bbox: Union[list, np.ndarray],
+        iou_threshold: float,
+        ma_window=2,
+        look_back_period=1,
     ):
         super().__init__(current_bbox, iou_threshold, ma_window, look_back_period)
 
@@ -117,28 +115,27 @@ class Person(Tracked_Obj):
         Returns:
             bool
         """
-        return not self._moved_beyond_threshold()       
-            # Return False if person bbox moved beyond threshold. i.e. tracking another person. To tackle id switching
-        
+        return not self._moved_beyond_threshold()
+        # Return False if person bbox moved beyond threshold. i.e. tracking another person. To tackle id switching
+
 
 class Bus(Tracked_Obj):
-
     def __init__(
-        self, 
-        current_bbox: Union[list, np.ndarray], 
-        iou_threshold: float, 
-        door_height_proportion: float,          # Proportion of height of door with respective to the width of bus
-        door_offset_height: float,                  
+        self,
+        current_bbox: Union[list, np.ndarray],
+        iou_threshold: float,
+        door_height_proportion: float,  # Proportion of height of door with respective to the width of bus
+        door_offset_height: float,
         ma_window=10,
-        look_back_period=5
+        look_back_period=5,
     ):
         super().__init__(current_bbox, iou_threshold, ma_window, look_back_period)
         self.door_height_proportion = door_height_proportion
         self.door_offset_height = door_offset_height
-        self.bus_door = None    # (x, (y1, y2))
+        self.bus_door = None  # (x, (y1, y2))
         self.passengers: Set[Person] = set()
         self.stationary = False
-        
+
     def is_stationary(self) -> bool:
         """Whether the bus is stationary
 
@@ -146,15 +143,11 @@ class Bus(Tracked_Obj):
             bool
         """
         self.stationary = not self._moved_beyond_threshold()
-        return self.stationary       
+        return self.stationary
 
     def door_line(
-            self,
-            offset: float,
-            image: np.ndarray,
-            rescale_function=None,
-            draw_door=False, 
-        ) -> None:
+        self, offset: float, image: np.ndarray, rescale_function=None, draw_door=False,
+    ) -> None:
         """Creates the virtual door line and optionally draws it on the image. 
 
         Args:
@@ -164,19 +157,25 @@ class Bus(Tracked_Obj):
             draw_door (bool, optional): Whether to draw the virtual door line on image. Defaults to False.
         """
         img_rows, img_cols, _ = image.shape
-        offset *= self.width # Assume door is vertically straight on the right side
+        offset *= self.width  # Assume door is vertically straight on the right side
         x = self.cur_bbox[2] + offset
-        y1 = self.cur_bbox[3] - self.door_height_proportion * (self.width*img_cols/img_rows)  # Top of door line
-        y2 = self.cur_bbox[3] - self.door_offset_height * (self.width*img_cols/img_rows)      # Bottom fo door line
-            
+        y1 = self.cur_bbox[3] - self.door_height_proportion * (
+            self.width * img_cols / img_rows
+        )  # Top of door line
+        y2 = self.cur_bbox[3] - self.door_offset_height * (
+            self.width * img_cols / img_rows
+        )  # Bottom fo door line
+
         if draw_door:
-            assert(rescale_function is not None), "Please provide rescale function for drawing the door"
+            assert (
+                rescale_function is not None
+            ), "Please provide rescale function for drawing the door"
             rescaled_tracks = rescale_function([(x, y1, x, y2)])[0]
             cv2.line(
-                image, 
-                (rescaled_tracks[0], rescaled_tracks[1]), 
-                (rescaled_tracks[2], rescaled_tracks[3]), 
-                color=[255,255,255], 
-                thickness=2
+                image,
+                (rescaled_tracks[0], rescaled_tracks[1]),
+                (rescaled_tracks[2], rescaled_tracks[3]),
+                color=[255, 255, 255],
+                thickness=2,
             )
         self.bus_door = (x, (y1, y2))

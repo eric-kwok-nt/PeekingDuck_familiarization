@@ -19,7 +19,9 @@ class Node(AbstractNode):
 
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
         # super().__init__(config, node_path=__name__, **kwargs)
-        node_path = os.path.join(os.getcwd(), "src/custom_nodes/configs/dabble.passenger_counting")
+        node_path = os.path.join(
+            os.getcwd(), "src/custom_nodes/configs/dabble.passenger_counting"
+        )
         super().__init__(config, node_path=node_path, **kwargs)
         self.bus_dict = dict()
         self.person_dict = dict()
@@ -63,8 +65,8 @@ class Node(AbstractNode):
         self.bus_ids = copy(inputs["bus_ids"])
         self.person_tracks = deepcopy(inputs["person_tracks"])
         self.person_ids = copy(inputs["person_ids"])
-        self.rescale_function = inputs['rescale_function']
-        self.image_ = inputs['img']
+        self.rescale_function = inputs["rescale_function"]
+        self.image_ = inputs["img"]
         self.fps_ = inputs["saved_video_fps"]
         if self.image_ is not None:
             self._update_bus()
@@ -75,14 +77,16 @@ class Node(AbstractNode):
                     num_passengers = len(bus.passengers)
                     if not isinstance(self.bus_ids, np.ndarray):
                         self.bus_ids = np.array(self.bus_ids)
-                    bus_bbox = self.rescaled_bus_tracks[np.where(self.bus_ids==bus_id)[0][0]]
+                    bus_bbox = self.rescaled_bus_tracks[
+                        np.where(self.bus_ids == bus_id)[0][0]
+                    ]
                     text = f"n_passengers: {num_passengers}"
                     include_text_kwargs = {
-                        "image": self.image_, 
-                        "bbox": bus_bbox, 
-                        "tag": text, 
-                        "colour": [255,255,255], 
-                        "pos": 'top_left_upper',
+                        "image": self.image_,
+                        "bbox": bus_bbox,
+                        "tag": text,
+                        "colour": [255, 255, 255],
+                        "pos": "top_left_upper",
                     }
                     self.draw_pipeline.append((include_text, include_text_kwargs))
         if inputs["pipeline_end"]:
@@ -92,7 +96,7 @@ class Node(AbstractNode):
             "df_records": self.bus_record_df,
             "draw_pipeline": self.draw_pipeline,
             "write_now": self.write_now,
-            }
+        }
 
     def _update_bus(self):
         """Updates the bus objects. If bus object already exists, update the existing object.
@@ -107,35 +111,38 @@ class Node(AbstractNode):
                 bus_dict[id] = bus_obj
                 # Draw the virtual door line if the bus is stationary
                 if bus_obj.is_stationary():
-                    text = 'stationary'
+                    text = "stationary"
                     bus_dict[id].door_line(
-                        offset=self.bus_tracker['boundary_offset'],
+                        offset=self.bus_tracker["boundary_offset"],
                         image=self.image_,
                         rescale_function=self.rescale_function,
-                        draw_door=self.bus_tracker['draw_boundary'],
+                        draw_door=self.bus_tracker["draw_boundary"],
                     )
                 else:
-                    text='moving'
+                    text = "moving"
                 # Indicates in the image whether a bus is moving
                 include_text_kwargs = {
-                    "image": self.image_, 
-                    "bbox": self.rescaled_bus_tracks[idx], 
-                    "tag": text, 
-                    "colour": [255,255,255], 
-                    "pos": 'top_left',
+                    "image": self.image_,
+                    "bbox": self.rescaled_bus_tracks[idx],
+                    "tag": text,
+                    "colour": [255, 255, 255],
+                    "pos": "top_left",
                 }
                 self.draw_pipeline.append((include_text, include_text_kwargs))
             else:
                 # Creates a new object if bus object does not exist
                 bus_dict[id] = Bus(
-                    current_bbox=copy(self.bus_tracks[idx]), 
-                    iou_threshold=self.bus_tracker['iou_threshold'],
-                    door_height_proportion=self.bus_tracker['door_height_proportion'],
-                    door_offset_height=self.bus_tracker['door_offset_height'],
-                    ma_window=self.bus_tracker['ma_window'],
-                    look_back_period=self.bus_tracker['look_back_period']
+                    current_bbox=copy(self.bus_tracks[idx]),
+                    iou_threshold=self.bus_tracker["iou_threshold"],
+                    door_height_proportion=self.bus_tracker["door_height_proportion"],
+                    door_offset_height=self.bus_tracker["door_offset_height"],
+                    ma_window=self.bus_tracker["ma_window"],
+                    look_back_period=self.bus_tracker["look_back_period"],
                 )
-                min, sec = int(self.frame//self.fps_//60), int(self.frame//self.fps_)%60
+                min, sec = (
+                    int(self.frame // self.fps_ // 60),
+                    int(self.frame // self.fps_) % 60,
+                )
                 # buses_records dict have keys that are bus object and value being their appearance timing
                 self.buses_records[bus_dict[id]] = (min, sec)
         # Copy the bus_dict into the class attribute, objects that do not appear in current frame are removed
@@ -151,27 +158,27 @@ class Node(AbstractNode):
             if id in self.person_dict:
                 person_obj = self.person_dict[id]
                 person_obj.update_pos(self.person_tracks[idx])
-                # Check whether ID switch has occurred to a particular person ID 
+                # Check whether ID switch has occurred to a particular person ID
                 # by looking at the IOU of previous and current bbox
                 if person_obj.is_same_id():
                     person_dict[id] = person_obj
                 else:
                     person_dict[id] = Person(
                         current_bbox=copy(self.person_tracks[idx]),
-                        iou_threshold=self.person_tracker['iou_threshold'],
-                        ma_window=self.person_tracker['ma_window'],
-                        look_back_period=self.person_tracker['look_back_period']
+                        iou_threshold=self.person_tracker["iou_threshold"],
+                        ma_window=self.person_tracker["ma_window"],
+                        look_back_period=self.person_tracker["look_back_period"],
                     )
             else:
                 person_dict[id] = Person(
-                        current_bbox=copy(self.person_tracks[idx]),
-                        iou_threshold=self.person_tracker['iou_threshold'],
-                        ma_window=self.person_tracker['ma_window'],
-                        look_back_period=self.person_tracker['look_back_period']
-                    )
+                    current_bbox=copy(self.person_tracks[idx]),
+                    iou_threshold=self.person_tracker["iou_threshold"],
+                    ma_window=self.person_tracker["ma_window"],
+                    look_back_period=self.person_tracker["look_back_period"],
+                )
 
         self.person_dict = person_dict
-    
+
     def _count_passenger(self):
         """Count the number of passengers based on the heuristics
         """
@@ -179,22 +186,28 @@ class Node(AbstractNode):
         for _, bus_obj in self.bus_dict.items():
             if bus_obj.stationary:
                 for _, person_obj in self.person_dict.items():
-                    person_bus_height_r = person_obj.height / (bus_obj.width*img_cols/img_rows)
-                    if (person_obj.prev_centroid[0] < bus_obj.bus_door[0]) or \
-                        (person_obj.prev_centroid[1] < bus_obj.bus_door[1][0]) or \
-                        (person_obj.prev_centroid[1] > bus_obj.bus_door[1][1]) or \
-                        (person_bus_height_r < self.person_to_bus_ratio[0]) or \
-                        (person_bus_height_r > self.person_to_bus_ratio[1]) or \
-                        (person_obj in bus_obj.passengers):
+                    person_bus_height_r = person_obj.height / (
+                        bus_obj.width * img_cols / img_rows
+                    )
+                    if (
+                        (person_obj.prev_centroid[0] < bus_obj.bus_door[0])
+                        or (person_obj.prev_centroid[1] < bus_obj.bus_door[1][0])
+                        or (person_obj.prev_centroid[1] > bus_obj.bus_door[1][1])
+                        or (person_bus_height_r < self.person_to_bus_ratio[0])
+                        or (person_bus_height_r > self.person_to_bus_ratio[1])
+                        or (person_obj in bus_obj.passengers)
+                    ):
                         # If person was on left side or above or below the bus door,
-                        # or if the person is too small compared to bus bbox, 
+                        # or if the person is too small compared to bus bbox,
                         # or if the person has already been counted
                         continue
-                    elif (person_obj.cur_centroid is not None) and \
-                        (person_obj.cur_centroid[0] < bus_obj.bus_door[0]) and \
-                        (person_obj.cur_centroid[1] > bus_obj.bus_door[1][0]) and \
-                        (person_obj.cur_centroid[1] < bus_obj.bus_door[1][1]):
-                        # If the person was not just initialized and previously con correct position, 
+                    elif (
+                        (person_obj.cur_centroid is not None)
+                        and (person_obj.cur_centroid[0] < bus_obj.bus_door[0])
+                        and (person_obj.cur_centroid[1] > bus_obj.bus_door[1][0])
+                        and (person_obj.cur_centroid[1] < bus_obj.bus_door[1][1])
+                    ):
+                        # If the person was not just initialized and previously con correct position,
                         # and is currently on the left side and within the height of door
                         bus_obj.passengers.add(person_obj)
 

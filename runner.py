@@ -16,19 +16,20 @@ import pdb
 
 log = logging.getLogger(__name__)
 
+
 def main(args) -> None:
     conf = OmegaConf.load(args.config)
     input_node = recorded.Node(
-        input_dir= conf['input.recorded'].input_dir,
-        threading=conf['input.recorded'].threading,
-        buffer_frame=conf['input.recorded'].buffer_frames
+        input_dir=conf["input.recorded"].input_dir,
+        threading=conf["input.recorded"].threading,
+        buffer_frame=conf["input.recorded"].buffer_frames,
     )
     yolo_node = yolo.Node(
-        model_type=conf['model.yolo'].model_type,
-        num_classes=conf['model.yolo'].num_classes,
-        detect_ids=conf['model.yolo'].detect_ids,
-        yolo_iou_threshold=conf['model.yolo'].yolo_iou_threshold,
-        yolo_score_threshold=conf['model.yolo'].yolo_score_threshold
+        model_type=conf["model.yolo"].model_type,
+        num_classes=conf["model.yolo"].num_classes,
+        detect_ids=conf["model.yolo"].detect_ids,
+        yolo_iou_threshold=conf["model.yolo"].yolo_iou_threshold,
+        yolo_score_threshold=conf["model.yolo"].yolo_score_threshold,
     )
     person_bus_tracker_node = person_bus_tracker.Node()
     passenger_counting_node = passenger_counting.Node()
@@ -42,47 +43,56 @@ def main(args) -> None:
         output_node = screen.Node()
     else:
         try:
-            assert conf['output.media_writer'].output_dir is not None
-            output_node = media_writer.Node(output_dir=conf['output.media_writer'].output_dir)
+            assert conf["output.media_writer"].output_dir is not None
+            output_node = media_writer.Node(
+                output_dir=conf["output.media_writer"].output_dir
+            )
         except (ConfigAttributeError, ConfigKeyError, AssertionError):
-            log.error("If output_to_screen is False, output_dir under output.media_writer must be entered.")
+            log.error(
+                "If output_to_screen is False, output_dir under output.media_writer must be entered."
+            )
             raise
 
     if conf.record_to_csv:
-        runner = Runner(nodes=[
-            input_node,
-            yolo_node,
-            person_bus_tracker_node,
-            passenger_counting_node,
-            fps_node,
-            draw_custom_node,
-            draw_node,
-            tag_node, 
-            bus_record_node,
-            output_node,
-        ])
-    else: 
-        runner = Runner(nodes=[
-            input_node,
-            yolo_node,
-            person_bus_tracker_node,
-            passenger_counting_node,
-            fps_node,
-            draw_custom_node,
-            draw_node,
-            tag_node, 
-            output_node,
-        ])
+        runner = Runner(
+            nodes=[
+                input_node,
+                yolo_node,
+                person_bus_tracker_node,
+                passenger_counting_node,
+                fps_node,
+                draw_custom_node,
+                draw_node,
+                tag_node,
+                bus_record_node,
+                output_node,
+            ]
+        )
+    else:
+        runner = Runner(
+            nodes=[
+                input_node,
+                yolo_node,
+                person_bus_tracker_node,
+                passenger_counting_node,
+                fps_node,
+                draw_custom_node,
+                draw_node,
+                tag_node,
+                output_node,
+            ]
+        )
 
     runner.run()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Passenger Counting Algorithm")
     parser.add_argument(
-        '--config', 
-        type=str, 
-        default='./config/passenger_counting/runner_config.yaml',
-        help="Path to the config file"
+        "--config",
+        type=str,
+        default="./config/passenger_counting/runner_config.yaml",
+        help="Path to the config file",
     )
     parsed = parser.parse_args()
     main(args=parsed)
