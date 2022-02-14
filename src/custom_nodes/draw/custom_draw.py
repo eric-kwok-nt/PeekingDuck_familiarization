@@ -1,7 +1,3 @@
-"""
-Node template for creating custom nodes.
-"""
-
 from typing import Any, Dict
 import os
 from peekingduck.pipeline.nodes.node import AbstractNode
@@ -9,7 +5,7 @@ import pdb
 
 
 class Node(AbstractNode):
-    """This is a template class of how to write a node for PeekingDuck.
+    """This node perform drawing or writing operation on the image
 
     Args:
         config (:obj:`Dict[str, Any]` | :obj:`None`): Node configuration.
@@ -21,13 +17,15 @@ class Node(AbstractNode):
         # super().__init__(config, node_path=__name__, **kwargs)
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
+        """This node takes in a list of tuples, with first element being the callable in which 
+        drawing or writing operations would be performed, and the second element is a dictionary of 
+        keywords arguments for the respective callable. 
 
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys "draw_pipeline".
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): Empty dictionary.
         """
         draw_pipeline = inputs["draw_pipeline"]
         for tup in draw_pipeline:

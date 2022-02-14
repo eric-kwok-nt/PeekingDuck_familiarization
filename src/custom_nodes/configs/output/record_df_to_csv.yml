@@ -1,4 +1,7 @@
-input: ["df_records", "write_now", "pipeline_end"]             
+input: 
+  - "df_records"    # DataFrame for which to be recorded into a csv file
+  - "write_now"     # A flag to indicate whether to write the DataFrame to csv before the pipeline ends
+  - "pipeline_end"
 output: ["none"]  
 
 write_mode: "w"   # Whether to write to a new file or append to an existing file. Defaults to 'w'.

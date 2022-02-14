@@ -1,16 +1,12 @@
-"""
-Node template for creating custom nodes.
-"""
-
 from typing import Any, Dict
 import os
 from peekingduck.pipeline.nodes.node import AbstractNode
 import ntpath
 
 
-
 class Node(AbstractNode):
-    """This is a template class of how to write a node for PeekingDuck.
+    """This node takes in a DataFrame and outputs a csv file. It creates parent folder if it does not exist.
+    The recording is performed either with the 'write_now' flag or when 'pipeline_end' flag is True.
 
     Args:
         config (:obj:`Dict[str, Any]` | :obj:`None`): Node configuration.
@@ -22,13 +18,12 @@ class Node(AbstractNode):
         # super().__init__(config, node_path=__name__, **kwargs)
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
-
+        """
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys 'df_records', 'write_now', 'pipeline_end'.
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): Empty Dictionary.
         """
         if (inputs["write_now"] or inputs["pipeline_end"]) and (inputs["df_records"] is not None):
             self.logger.info("Saving DataFrame to CSV file!")

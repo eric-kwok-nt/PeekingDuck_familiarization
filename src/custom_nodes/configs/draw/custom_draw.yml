@@ -1,2 +1,4 @@
-input: ["draw_pipeline"]             
+# A list of tuples with 1st element being the callable for which image drawing operation would be performed 
+# and the second element is the dictionary of keyword arguments for the callable
+input: ["draw_pipeline"]   
 output: ["none"]

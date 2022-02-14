@@ -4,13 +4,13 @@ input:
   - "person_tracks"
   - "bus_ids"
   - "person_ids"
-  - "rescale_function"
+  - "rescale_function"        # Rescale function from person_bus_tracker
   - "saved_video_fps"
   - "draw_pipeline"
   - "pipeline_end"
 output: 
-  - "df_records"
-  - "draw_pipeline"
+  - "df_records"              # A DataFrame with passegner counts and timing of appearance of buss
+  - "draw_pipeline"           
   - "write_now"
 
 bus_tracker:

@@ -5,15 +5,15 @@ input:
   - "bbox_labels"
   - "bbox_scores"
 output: 
-  - "obj_tags"
-  - "bboxes"
-  - "bbox_labels"
-  - "bus_tracks"
+  - "obj_tags"                        # List of Tracking ids with or witout class name
+  - "bboxes"                          # Array of tracking bounding boxes
+  - "bbox_labels"                     # Array of bounding box labels
+  - "bus_tracks"                      # Array of Tracking bboxes for bus
   - "person_tracks"
-  - "bus_ids"
+  - "bus_ids"                         # Array of tracking IDs for bus. Indices correspond to the list of tracks
   - "person_ids"
-  - "rescale_function"
-  - "draw_pipeline"
+  - "rescale_function"                # A rescale function to be used by downstream nodes.
+  - "draw_pipeline"                   # A list of (draw_function, kwargs)
 
 deep_sort: False
 

@@ -40,11 +40,22 @@ class Node(AbstractNode):
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
         Args:
-            inputs (dict): Dictionary with keys "img", "bus_tracks", "person_tracks",
-            "bus_ids", "person_ids", "rescale_function" and "saved_video_fps".
+            inputs (dict): 
+                - "img"   
+                - "bus_tracks"
+                - "person_tracks"
+                - "bus_ids"
+                - "person_ids"
+                - "rescale_function"
+                - "saved_video_fps"
+                - "draw_pipeline"
+                - "pipeline_end"
 
         Returns:
-            outputs (dict): Dictionary with keys "buses".
+            outputs (dict): 
+                - "df_records"
+                - "draw_pipeline"
+                - "write_now"
         """
         self.frame += 1
         self.draw_pipeline = inputs["draw_pipeline"]
@@ -55,25 +66,25 @@ class Node(AbstractNode):
         self.rescale_function = inputs['rescale_function']
         self.image_ = inputs['img']
         self.fps_ = inputs["saved_video_fps"]
-
-        self._update_bus()
-        self._update_person()
-        self._count_passenger()
-        if (len(self.bus_dict) != 0) and (self.indicate_num_passengers):
-            for bus_id, bus in self.bus_dict.items():
-                num_passengers = len(bus.passengers)
-                if not isinstance(self.bus_ids, np.ndarray):
-                    self.bus_ids = np.array(self.bus_ids)
-                bus_bbox = self.rescaled_bus_tracks[np.where(self.bus_ids==bus_id)[0][0]]
-                text = f"n_passengers: {num_passengers}"
-                include_text_kwargs = {
-                    "image": self.image_, 
-                    "bbox": bus_bbox, 
-                    "tag": text, 
-                    "colour": [255,255,255], 
-                    "pos": 'top_left_upper',
-                }
-                self.draw_pipeline.append((include_text, include_text_kwargs))
+        if self.image_ is not None:
+            self._update_bus()
+            self._update_person()
+            self._count_passenger()
+            if (len(self.bus_dict) != 0) and (self.indicate_num_passengers):
+                for bus_id, bus in self.bus_dict.items():
+                    num_passengers = len(bus.passengers)
+                    if not isinstance(self.bus_ids, np.ndarray):
+                        self.bus_ids = np.array(self.bus_ids)
+                    bus_bbox = self.rescaled_bus_tracks[np.where(self.bus_ids==bus_id)[0][0]]
+                    text = f"n_passengers: {num_passengers}"
+                    include_text_kwargs = {
+                        "image": self.image_, 
+                        "bbox": bus_bbox, 
+                        "tag": text, 
+                        "colour": [255,255,255], 
+                        "pos": 'top_left_upper',
+                    }
+                    self.draw_pipeline.append((include_text, include_text_kwargs))
         if inputs["pipeline_end"]:
             self.bus_record_df = self.save_data()
 

@@ -29,14 +29,19 @@ There are several assumptions to this problem:
     ├── environment.yml
     ├── images                    -> images for README file
     ├── runner.py                 -> Python script for running passenger counting
-    ├── src
-    │   ├── custom_nodes
-    │   │   ├── configs
-    │   │   │   └── dabble        -> Config files for the respective dabble custom nodes
-    │   │   └── dabble            -> Contains the source code for the 2 custom nodes
-    │   │       ├── sort_tracker  -> Files pertaining to the sort tracker
-    │   │       └── utils         -> Contains utility files for drawing on image and for tracking
-    │   └── data                  -> Contains yaml config files for recording videos for dab recognition, and a script to convert video file format from mkv to mp4 format
+    └── src
+        ├── custom_nodes
+        │   ├── configs
+        │   │   ├── dabble        -> Config files for the respective dabble custom nodes
+        │   │   ├── draw          
+        │   │   └── output
+        │   ├── dabble            -> Contains the source code for the 2 custom nodes
+        |   |   ├── deep_sort     -> Files pertaining to the deep sort tracker
+        │   |   ├── sort_tracker  
+        │   |   └── utils         -> Contains utility files for drawing on image and for tracking
+        │   ├── draw              -> Custom draw node
+        │   └── output            -> Custom csv writer node
+        └── data                  -> Contains yaml config files for recording videos for dab recognition, and a script to convert video file format from mkv to mp4 format
 --------
 
 ## 3. Usage
@@ -60,7 +65,7 @@ Command to run dab detection using __PoseNet__:
 ```bash
 peekingduck run --config_path ./config/dab_recorded_posenet_config.yml
 ```
-By default, it will look for the video file in the following path ```./data/raw/video1.mp4```. It can be changed manually in the respective yaml configuration file as such:
+By default, it will look for the video file in the following path ```data/raw/video1.mp4```. It can be changed manually in the respective yaml configuration file as such:
 ```yaml
 nodes:
 - input.recorded:
@@ -90,26 +95,31 @@ optional arguments:
   -h, --help       show this help message and exit
   --config CONFIG  Path to the config file (Default: "./config/passenger_counting/")
 ```
-General configurations can be changed in the config file: ```./config/passenger_counting/runner_config.yaml```
+* General configurations can be changed in the config file: ```config/passenger_counting/runner_config.yaml```
 
-1. To set or change the input video path
-2. Whether to use multithreading and buffering for the input node (Default is False)
-3. Hyperparameters for the YOLOv4 object detection model
-4. Whether to output the processed frames to the screen or save them as a video file
-5. Output path of the video file (Not applicable when output to the screen option is True)
+    1. To set or change the input video path
+    2. Whether to use multithreading and buffering for the input node (Default is False)
+    3. Hyperparameters for the YOLOv4 object detection model
+    4. Whether to record the passenger counts to a csv file
+    5. Whether to output the processed frames to the screen or save them as a video file
+    6. Output path of the video file (Not applicable when output to the screen option is True)
 
-Specific parameters for tracking are in the config file: ```./src/custom_nodes/configs/dabble/person_bus_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
-1. Whether to use Deep SORT or SORT algorithm
-1. Bus / Person tracking specific parameters such as the number of frames a tracker should stay without being updated and the type of tracker being used.
-2. Whether multithreading is used for tracking the bus and person respectively
-3. Whether to show the class of the bounding box in the tag (Top of the bbox)
-4. Whether to include bboxes from the YOLOv4 detection algorithm (in addition to the default tracker bboxes) and tags (placed at the bottom of bbox) to identify them as the detection bboxes
+* Specific parameters for tracking are in the config file: ```src/custom_nodes/configs/dabble/person_bus_tracker.yml```. In this config file, the user can change the hyperparameters for the tracking node such as the following:
+    1. Whether to use Deep SORT or SORT algorithm
+    2. Bus / Person tracking specific parameters such as the number of frames a tracker should stay without being updated and the type of tracker being used.
+    3. Whether multithreading is used for tracking the bus and person respectively
+    4. Whether to show the class of the bounding box in the tag (Top of the bbox)
+    5. Whether to include bboxes from the YOLOv4 detection algorithm (in addition to the default tracker bboxes) and tags (placed at the bottom of bbox) to identify them as the detection bboxes
 
-Lastly, parameters for passenger counting heuristics are in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml```. In this config file, the user can change settings such as the following:
-1. Bus tracker object parameters. E.g.: Estimated "door" height, "Door" offset
-2. Both bus and person tracker object parameters. E.g.: The moving average parameters of bounding boxes
-3. The output path of the recorded csv file, write mode etc.
-4. Whether to indicate the passenger counts on the top left of the bus bbox
+* Parameters for passenger counting heuristics are in the config file: ```src/custom_nodes/configs/dabble/passenger_counting.yml```. In this config file, the user can change settings such as the following:
+    1. Bus tracker object parameters. E.g.: Estimated "door" height, "Door" offset
+    2. Both bus and person tracker object parameters. E.g.: The moving average parameters of bounding boxes
+    3. The size of the person with respect to the bus bbox to be considered as a boarding passenger
+    4. Whether to indicate the passenger counts on the top left of the bus bbox
+
+* Lastly, the parameters for saving the passenger records to CSV file can also be changed in the config file ```src/custom_nodes/configs/output/record_df_to_csv.yml```. The following parameters can be changed:
+    1. The writing mode for the CSV file, whether to overwrite or append to an existing file.
+    2. The output path of the CSV file. If parent directories do not exist, it will be created. 
 
 Descriptions can also be found in the comments in the yaml file.
 
@@ -187,7 +197,7 @@ For a person to be considered to be boarded a certain bus, there are several req
 3. The centroid of the person must be within the y values of the "bus door"
 
 #### 4.2.3 CSV Output
-A CSV file with the number of passengers boarded for each bus is saved every time the programme ends. The output path can be changed in the config file: ```./src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
+A CSV file with the number of passengers boarded for each bus is saved every time the programme ends. The output path can be changed in the config file: ```src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
 
 |   | Number of Passengers | Recorded Time |
 |---|----------------------|---------------|

@@ -28,16 +28,18 @@ class Node(AbstractNode):
         # super().__init__(config, node_path=__name__, **kwargs)
         if not self.deep_sort:
             self.mot_person_tracker = Sort(max_age=self.sort_person_tracker['DEFAULT_MAX_AGE'],
-                        min_hits=self.sort_person_tracker["DEFAULT_MIN_HITS"],
-                        use_time_since_update=self.sort_person_tracker['DEFAULT_USE_TIME_SINCE_UPDATE'],
-                        iou_threshold=self.sort_person_tracker['DEFAULT_IOU_THRESHOLD'],
-                        tracker_type=self.sort_person_tracker['TRACKER_TYPE'])
+                min_hits=self.sort_person_tracker["DEFAULT_MIN_HITS"],
+                use_time_since_update=self.sort_person_tracker['DEFAULT_USE_TIME_SINCE_UPDATE'],
+                iou_threshold=self.sort_person_tracker['DEFAULT_IOU_THRESHOLD'],
+                tracker_type=self.sort_person_tracker['TRACKER_TYPE']
+            )
             
             self.mot_bus_tracker = Sort(max_age=self.sort_bus_tracker['DEFAULT_MAX_AGE'],
-                    min_hits=self.sort_bus_tracker["DEFAULT_MIN_HITS"],
-                    use_time_since_update=self.sort_bus_tracker['DEFAULT_USE_TIME_SINCE_UPDATE'],
-                    iou_threshold=self.sort_bus_tracker['DEFAULT_IOU_THRESHOLD'],
-                    tracker_type=self.sort_bus_tracker['TRACKER_TYPE'])
+                min_hits=self.sort_bus_tracker["DEFAULT_MIN_HITS"],
+                use_time_since_update=self.sort_bus_tracker['DEFAULT_USE_TIME_SINCE_UPDATE'],
+                iou_threshold=self.sort_bus_tracker['DEFAULT_IOU_THRESHOLD'],
+                tracker_type=self.sort_bus_tracker['TRACKER_TYPE']
+            )
         else:
             person_metric = nn_matching.NearestNeighborDistanceMetric(
                 "cosine", 
@@ -65,11 +67,23 @@ class Node(AbstractNode):
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
         Args:
-            inputs (dict): Dictionary with keys "img", "bboxes", "bbox_labels" and "bbox_scores".
+            inputs (dict): 
+                - "img"
+                - "bboxes"
+                - "bbox_labels"
+                - "bbox_scores"
 
         Returns:
-            outputs (dict): Dictionary with keys "obj_tags", "bboxes", "bbox_labels", "bus_tracks",
-            "person_tracks", "bus_ids", "person_ids" and "rescale_function".
+            outputs (dict): 
+                - "obj_tags"
+                - "bboxes"
+                - "bbox_labels"
+                - "bus_tracks"
+                - "person_tracks"
+                - "bus_ids"
+                - "person_ids"
+                - "rescale_function"
+                - "draw_pipeline"
         """
         bboxes = []
         obj_tags = []
