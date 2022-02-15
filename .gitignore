@@ -55,6 +55,7 @@ docs/_build/
 
 # PyBuilder
 target/
+.pytest_cache
 
 # DotEnv configuration
 .env
@@ -88,8 +89,19 @@ target/
 # Mypy cache
 .mypy_cache/
 
+# docker-compose
+*docker-compose*
+
+# Virtual environment files
+venv/
+
+# ROS folders
+log/
+install/
+
 # Other files
 *.docx
 *.pptx
 test.md
 presentations
+docs/

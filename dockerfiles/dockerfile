@@ -1,0 +1,28 @@
+FROM osrf/ros:galactic-desktop
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN useradd -rm -d /home/chamois -s /bin/bash -g root -G sudo -u 1000 -p "$(openssl passwd -1 password123)" chamois
+WORKDIR /home/chamois
+
+RUN apt update -y
+RUN apt upgrade -y
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+RUN apt install -y software-properties-common
+RUN apt install -y python3-pip
+RUN apt install -y build-essential libssl-dev libffi-dev python3-dev
+RUN apt install -y vim
+RUN apt install -y wget
+RUN apt install -y iputils-ping
+RUN apt install -y net-tools
+
+RUN pip install virtualenv
+RUN pip install jupyterlab
+USER chamois
+RUN mkdir /home/chamois/work
+RUN echo "source '/opt/ros/$ROS_DISTRO/setup.bash'" >> ~/.bashrc
+
+ENV SHELL="/bin/bash"
+
+CMD ["bash"]
