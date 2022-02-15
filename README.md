@@ -197,7 +197,7 @@ For a person to be considered to be boarded a certain bus, there are several req
 3. The centroid of the person must be within the y values of the "bus door"
 
 #### 4.2.3 CSV Output
-A CSV file with the number of passengers boarded for each bus is saved every time the programme ends. The output path can be changed in the config file: ```src/custom_nodes/configs/dabble/passenger_counting.yml``` The output format is as such:
+A CSV file with the number of passengers boarded for each bus is saved every time the programme ends. The output path can be changed in the config file: ```src/custom_nodes/configs/output/record_df_to_csv.yml``` The output format is as such:
 
 |   | Number of Passengers | Recorded Time |
 |---|----------------------|---------------|
