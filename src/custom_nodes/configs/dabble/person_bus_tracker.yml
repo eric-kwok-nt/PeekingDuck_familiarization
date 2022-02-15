@@ -1,52 +1,51 @@
 # Mandatory configs
-input: 
+input:
   - "img"
   - "bboxes"
   - "bbox_labels"
   - "bbox_scores"
-output: 
-  - "obj_tags"                        # List of Tracking ids with or witout class name
-  - "bboxes"                          # Array of tracking bounding boxes
-  - "bbox_labels"                     # Array of bounding box labels
-  - "bus_tracks"                      # Array of Tracking bboxes for bus
+output:
+  - "obj_tags" # List of Tracking ids with or witout class name
+  - "bboxes" # Array of tracking bounding boxes
+  - "bbox_labels" # Array of bounding box labels
+  - "bus_tracks" # Array of Tracking bboxes for bus
   - "person_tracks"
-  - "bus_ids"                         # Array of tracking IDs for bus. Indices correspond to the list of tracks
+  - "bus_ids" # Array of tracking IDs for bus. Indices correspond to the list of tracks
   - "person_ids"
-  - "rescale_function"                # A rescale function to be used by downstream nodes.
-  - "draw_pipeline"                   # A list of (draw_function, kwargs)
+  - "draw_pipeline" # A list of (draw_function, kwargs)
 
 deep_sort: False
 
-person_score_threshold: 0.4           # Detection score threshold for person object, below which the bbox will be filtered
-bus_score_threshold: 0.4              # Detection score threshold for bus object
+person_score_threshold: 0.4 # Detection score threshold for person object, below which the bbox will be filtered
+bus_score_threshold: 0.4 # Detection score threshold for bus object
 
-sort_person_tracker:                  # For SORT algorithm
-  DEFAULT_MAX_AGE: 5                  # How many frames should a tracker stay without update and without successfully getting tracking state
-  DEFAULT_MIN_HITS: 4                 # Minimum hits to create a new tracker object
-  DEFAULT_USE_TIME_SINCE_UPDATE: 200  # How many frames should a tracker stay without update even with successful tracking state
-  DEFAULT_IOU_THRESHOLD: 0.5          # IOU threshold for matching the detection and the prediction from the tracker
-  TRACKER_TYPE: 'medianflow'
+sort_person_tracker: # For SORT algorithm
+  DEFAULT_MAX_AGE: 5 # How many frames should a tracker stay without update and without successfully getting tracking state
+  DEFAULT_MIN_HITS: 4 # Minimum hits to create a new tracker object
+  DEFAULT_USE_TIME_SINCE_UPDATE: 200 # How many frames should a tracker stay without update even with successful tracking state
+  DEFAULT_IOU_THRESHOLD: 0.5 # IOU threshold for matching the detection and the prediction from the tracker
+  TRACKER_TYPE: "medianflow"
 
-sort_bus_tracker:                     # For SORT algorithm
+sort_bus_tracker: # For SORT algorithm
   DEFAULT_MAX_AGE: 100
   DEFAULT_MIN_HITS: 1
   DEFAULT_USE_TIME_SINCE_UPDATE: 200
   DEFAULT_IOU_THRESHOLD: 0.5
-  TRACKER_TYPE: 'medianflow'
+  TRACKER_TYPE: "medianflow"
 
-deep_sort_person_tracker:             # For Deep SORT algorithm
+deep_sort_person_tracker: # For Deep SORT algorithm
   max_cosine_distance: 0.4
-  nn_budget: null                     # Maximum size of the appearance descriptor gallery. If None, no budget is enforced.
+  nn_budget: null # Maximum size of the appearance descriptor gallery. If None, no budget is enforced.
   default_max_age: 4
 
-deep_sort_bus_tracker:                # For Deep SORT algorithm
+deep_sort_bus_tracker: # For Deep SORT algorithm
   max_cosine_distance: 0.4
   nn_budget: null
   default_max_age: 100
 
-multithread: True                     # Multithreading for tracking. One thread for bus the other for person
-show_class_in_tag: False              # Whether to show the class name in the bbox
-detection:            
-  draw_bbox: True                     # Whether to draw detection bboxes
-  include_tag: True                   # Whether to include tag to indicate the bbox is for detection
-  include_score: True                 # Whether to include confidence score in the tag
+multithread: True # Multithreading for tracking. One thread for bus the other for person
+show_class_in_tag: False # Whether to show the class name in the bbox
+detection:
+  draw_bbox: True # Whether to draw detection bboxes
+  include_tag: True # Whether to include tag to indicate the bbox is for detection
+  include_score: True # Whether to include confidence score in the tag

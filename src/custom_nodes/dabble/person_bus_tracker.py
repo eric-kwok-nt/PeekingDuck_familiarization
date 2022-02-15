@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union, Callable, Tuple
 from peekingduck.pipeline.nodes.node import AbstractNode
 from .sort_tracker.sort import Sort
-from .utils.draw_image import include_text
+from .utils.draw_image import include_text, bboxes_rescaling
 import numpy as np
 import cv2
 import threading
@@ -92,7 +92,6 @@ class Node(AbstractNode):
                 - "person_tracks"
                 - "bus_ids"
                 - "person_ids"
-                - "rescale_function"
                 - "draw_pipeline"
         """
         bboxes = []
@@ -202,7 +201,6 @@ class Node(AbstractNode):
             "person_tracks": deepcopy(person_tracks),
             "bus_ids": copy(bus_tracks_ids),
             "person_ids": copy(person_tracks_ids),
-            "rescale_function": self.bboxes_rescaling,
             "draw_pipeline": self.draw_pipeline,
         }
         self.frame += 1
@@ -232,7 +230,7 @@ class Node(AbstractNode):
         tracks = []
         tracks_ids = []
 
-        bboxes_rescaled = np.array(self.bboxes_rescaling(bboxes))
+        bboxes_rescaled = np.array(bboxes_rescaling(bboxes, self.image_))
 
         if not self.deep_sort:
             tracks, tracks_ids = mot_tracker.update_and_get_tracks(
@@ -283,7 +281,7 @@ class Node(AbstractNode):
             color (list, optional): Colour of the bbox. Defaults to [255,255,255].
             thickness (int, optional): Thickness of bbox. Defaults to 2.
         """
-        bboxes_rescaled = self.bboxes_rescaling(bboxes)
+        bboxes_rescaled = bboxes_rescaling(bboxes, self.image_)
         for box, score in zip(bboxes_rescaled, scores):
             draw_rect_kwargs = {
                 "img": self.image_,
@@ -311,28 +309,6 @@ class Node(AbstractNode):
                 }
                 self.draw_pipeline.append((include_text, det_text_kwargs))
                 # include_text(**det_text_kwargs)
-
-    def bboxes_rescaling(
-        self, bboxes: List[Union[list, tuple]]
-    ) -> List[Union[list, tuple]]:
-        """Rescale the normalized bboxes to the original scale.
-
-        Args:
-            bboxes (List[Union[list, tuple]]): Bounding boxes to resize
-
-        Returns:
-            List[Union[list, tuple]]: Rescaled bboxes
-        """
-        bboxes_rescaled = []
-        for bbox in bboxes:
-            x_min, y_min, x_max, y_max = bbox
-            x_min = int(x_min * self.img_n_cols)
-            x_max = int(x_max * self.img_n_cols)
-            y_min = int(y_min * self.img_n_rows)
-            y_max = int(y_max * self.img_n_rows)
-            bboxes_rescaled.append([x_min, y_min, x_max, y_max])
-
-        return bboxes_rescaled
 
     # def get_sorted_idx(self, array: np.ndarray):
     #     processed_list = []

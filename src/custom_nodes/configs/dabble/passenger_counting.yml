@@ -1,33 +1,32 @@
 input:
-  - "img"   
+  - "img"
   - "bus_tracks"
   - "person_tracks"
   - "bus_ids"
   - "person_ids"
-  - "rescale_function"        # Rescale function from person_bus_tracker
   - "saved_video_fps"
   - "draw_pipeline"
   - "pipeline_end"
-output: 
-  - "df_records"              # A DataFrame with passegner counts and timing of appearance of buss
-  - "draw_pipeline"           
+output:
+  - "df_records" # A DataFrame with passegner counts and timing of appearance of buss
+  - "draw_pipeline"
   - "write_now"
 
 bus_tracker:
-  iou_threshold: 0.85         # IOU below which is considered moving
+  iou_threshold: 0.85 # IOU below which is considered moving
   door_height_proportion: 0.7 # Height of "door" from the bottom of the bus bbox. A factor of bus width
-  door_offset_height: 0.15     # The height offset of the door from the bottom of the bus bbox to the bottom of the "door". A factor of bus width
-  ma_window: 10               # Moving average window size to track the previous bounding box location
-  look_back_period: 10        # Period to look back to get the previous bbox
-  draw_boundary: True         # Whether to draw the "door", a vertical line beyond which a passenger is considered boarded
-  boundary_offset: 0.1        # A fraction of the width of the bus bbox. How much the "door" to be offset to the right of the bus.
+  door_offset_height: 0.15 # The height offset of the door from the bottom of the bus bbox to the bottom of the "door". A factor of bus width
+  ma_window: 10 # Moving average window size to track the previous bounding box location
+  look_back_period: 10 # Period to look back to get the previous bbox
+  draw_boundary: True # Whether to draw the "door", a vertical line beyond which a passenger is considered boarded
+  boundary_offset: 0.1 # A fraction of the width of the bus bbox. How much the "door" to be offset to the right of the bus.
 
 person_tracker:
-  iou_threshold: 0.2          # IOU below which is considered to be another person
-  ma_window: 2    
+  iou_threshold: 0.2 # IOU below which is considered to be another person
+  ma_window: 2
   look_back_period: 1
 
-person_to_bus_ratio: [0.4, 0.8]  
+person_to_bus_ratio: [0.4, 0.8]
 # Range of person bbox height to bus bbox width ratio to be considered as boarding passenger
 indicate_num_passengers: True # Whether to indicate the number of boarded passengers on the bus bbox
 

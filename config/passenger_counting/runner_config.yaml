@@ -1,18 +1,17 @@
 input.recorded:
-  input_dir: "data/raw/passenger_count.mp4"  # Path of Input video
-  threading: False        # Whether to use multithreading when reading frames from input video
-  buffer_frames: False    # Whether to buffer frames
+  input_dir: "data/raw/passenger_count.mp4" # Path of Input video
+  threading: False # Whether to use multithreading when reading frames from input video
+  buffer_frames: False # Whether to buffer frames
 
 model.yolo:
-  model_type: "v4"            # {"v4, "v4tiny"}
+  model_type: "v4" # {"v4, "v4tiny"}
   num_classes: 2
-  detect_ids: [0,5]           # Person and bus
-  yolo_iou_threshold: 0.5     
+  detect_ids: [0, 5] # Person and bus
+  yolo_iou_threshold: 0.5
   yolo_score_threshold: 0.4
 
-record_to_csv: True          # Whether to record the number of passengers in a csv file
-output_to_screen: False  # To get the output to the screen or save it as a video
+record_to_csv: False # Whether to record the number of passengers in a csv file
+output_to_screen: True # To get the output to the screen or save it as a video
 
 output.media_writer:
   output_dir: "data/interim/"
-

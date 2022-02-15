@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from ..sort_tracker.utils import iou
 from copy import copy
+from .draw_image import bboxes_rescaling
 import pdb
 
 
@@ -146,14 +147,13 @@ class Bus(Tracked_Obj):
         return self.stationary
 
     def door_line(
-        self, offset: float, image: np.ndarray, rescale_function=None, draw_door=False,
+        self, offset: float, image: np.ndarray, draw_door=False,
     ) -> None:
         """Creates the virtual door line and optionally draws it on the image. 
 
         Args:
             offset (float): How much offset as a fraction of the width of bus bbox
             image (np.ndarray): Image to be drawn on
-            rescale_function (Callable[list], optional): Rescale function from the person_tracker node. Defaults to None.
             draw_door (bool, optional): Whether to draw the virtual door line on image. Defaults to False.
         """
         img_rows, img_cols, _ = image.shape
@@ -167,10 +167,7 @@ class Bus(Tracked_Obj):
         )  # Bottom fo door line
 
         if draw_door:
-            assert (
-                rescale_function is not None
-            ), "Please provide rescale function for drawing the door"
-            rescaled_tracks = rescale_function([(x, y1, x, y2)])[0]
+            rescaled_tracks = bboxes_rescaling([(x, y1, x, y2)], image)[0]
             cv2.line(
                 image,
                 (rescaled_tracks[0], rescaled_tracks[1]),

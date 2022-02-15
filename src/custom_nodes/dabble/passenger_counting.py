@@ -3,7 +3,7 @@ from peekingduck.pipeline.nodes.node import AbstractNode
 import os
 import numpy as np
 from .utils.tracker import Person, Bus
-from .utils.draw_image import include_text
+from .utils.draw_image import include_text, bboxes_rescaling
 from copy import deepcopy, copy
 import pandas as pd
 from collections import defaultdict
@@ -30,7 +30,6 @@ class Node(AbstractNode):
         self.bus_ids = None
         self.person_tracks = None
         self.person_ids = None
-        self.rescale_function = None
         self.image_ = None
         self.frame = 0
         self.fps_ = None
@@ -48,7 +47,6 @@ class Node(AbstractNode):
                 - "person_tracks"
                 - "bus_ids"
                 - "person_ids"
-                - "rescale_function"
                 - "saved_video_fps"
                 - "draw_pipeline"
                 - "pipeline_end"
@@ -65,7 +63,6 @@ class Node(AbstractNode):
         self.bus_ids = copy(inputs["bus_ids"])
         self.person_tracks = deepcopy(inputs["person_tracks"])
         self.person_ids = copy(inputs["person_ids"])
-        self.rescale_function = inputs["rescale_function"]
         self.image_ = inputs["img"]
         self.fps_ = inputs["saved_video_fps"]
         if self.image_ is not None:
@@ -102,7 +99,7 @@ class Node(AbstractNode):
         """Updates the bus objects. If bus object already exists, update the existing object.
         Otherwise, create a new object.
         """
-        self.rescaled_bus_tracks = self.rescale_function(self.bus_tracks)
+        self.rescaled_bus_tracks = bboxes_rescaling(self.bus_tracks, self.image_)
         bus_dict = dict()
         for idx, id in enumerate(self.bus_ids):
             if id in self.bus_dict:
@@ -115,7 +112,6 @@ class Node(AbstractNode):
                     bus_dict[id].door_line(
                         offset=self.bus_tracker["boundary_offset"],
                         image=self.image_,
-                        rescale_function=self.rescale_function,
                         draw_door=self.bus_tracker["draw_boundary"],
                     )
                 else:
