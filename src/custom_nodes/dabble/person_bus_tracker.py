@@ -77,14 +77,14 @@ class Node(AbstractNode):
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
         Args:
-            inputs (dict): 
+            inputs (dict):
                 - "img"
                 - "bboxes"
                 - "bbox_labels"
                 - "bbox_scores"
 
         Returns:
-            outputs (dict): 
+            outputs (dict):
                 - "obj_tags"
                 - "bboxes"
                 - "bbox_labels"
@@ -219,7 +219,7 @@ class Node(AbstractNode):
 
         Args:
             bboxes (Union[list, np.ndarray]): List of Bounding Boxes
-            mot_tracker (Callable): The respective MOT tracker 
+            mot_tracker (Callable): The respective MOT tracker
             names (list, optional): Respective class names. Only applicable to DeepSORT. Defaults to [].
             scores (list, optional): Respective bbox scores. Only applicable to DeepSORT. Defaults to [].
             default_max_age (int, optional): Max age of the tracker bbox. Only applicable to DeepSORT. Defaults to 1.
@@ -282,10 +282,17 @@ class Node(AbstractNode):
             thickness (int, optional): Thickness of bbox. Defaults to 2.
         """
         bboxes_rescaled = bboxes_rescaling(bboxes, self.image_)
+        if self.detection["include_score"]:
+            assert (
+                scores is not None
+            ), "Please input detection scores if include_score is True"
+        else:
+            scores = [None for _ in bboxes_rescaled]
+
         for box, score in zip(bboxes_rescaled, scores):
             draw_rect_kwargs = {
                 "img": self.image_,
-                "pt1": (int(box[2]), int(box[3])),
+                "pt1": (int(box[0]), int(box[1])),
                 "pt2": (int(box[2]), int(box[3])),
                 "color": color,
                 "thickness": thickness,
@@ -295,9 +302,6 @@ class Node(AbstractNode):
             if self.detection["include_tag"]:
                 text = "Det"
                 if self.detection["include_score"]:
-                    assert (
-                        scores is not None
-                    ), "Please input detection scores if include_score is True"
                     text += f": {score:.2f}"
 
                 det_text_kwargs = {
