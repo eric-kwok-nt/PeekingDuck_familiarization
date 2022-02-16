@@ -1,33 +1,23 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
-from abc import ABCMeta, abstractmethod
 
 
-class PublisherTemplate(Node, metaclass=ABCMeta):
+class ROSPublisher(Node):
     rclpy.init()
 
-    def __init__(self, node_name_: str, topic_name: str, queue_size: int):
+    def __init__(self, node_name_: str):
         super().__init__(node_name_)
-        self.publisher_ = self.create_publisher(String, topic_name, queue_size)
+        self.publisher_list = []
 
-    @abstractmethod
-    def publish(self):
-        raise NotImplementedError("This method needs to be implemented")
+    def create_publishers(self, msg_type, topic_name, queue_size):
+        self.publisher_list.append(
+            self.create_publisher(msg_type, topic_name, queue_size)
+        )
+
+    def publish(self, msg_list: list):
+        for publisher, msg in zip(self.publisher_list, msg_list):
+            publisher.publish(msg)
 
     def shutdown(self):
         self.destroy_node()
         rclpy.shutdown()
-
-
-class StringPublisher(PublisherTemplate):
-    def __init__(self, node_name_: str, topic_name: str, queue_size=1):
-        super().__init__(node_name_, topic_name, queue_size)
-
-    def publish(self, text: str):
-        msg = String()
-        msg.data = text
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing: "%s"' % msg.data)
-
-

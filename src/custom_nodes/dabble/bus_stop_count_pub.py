@@ -9,9 +9,10 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 from .utils.draw_image import bboxes_rescaling
 from .utils.tracker import Tracked_Obj
-from .utils.publishers import StringPublisher
-import rclpy
-from rclpy.node import Node
+from .utils.publishers import ROSPublisher
+from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 
 class Node(AbstractNode):
@@ -29,11 +30,13 @@ class Node(AbstractNode):
         # super().__init__(config, node_path=__name__, **kwargs)
         self.image_ = None
         self.bboxes = None
+        self.br = CvBridge()
         self.ros_node_name = "bus_stop_counter"
-        self.ros_topic_name = "number_of_people"
-        self.Publisher = StringPublisher(
-            node_name_=self.ros_node_name, topic_name=self.ros_topic_name
-        )
+        self.Publisher = ROSPublisher(self.ros_node_name)
+        self.Publisher.create_publishers(String, "/number_of_people", queue_size=1)
+        if self.publish_footage:
+            self.Publisher.create_publishers(Image, "/video_footage", queue_size=10)
+        self.msg_list = []
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """This node does ___.
@@ -44,18 +47,25 @@ class Node(AbstractNode):
         Returns:
             outputs (dict): Dictionary with keys "__".
         """
-        # self.image_ = deepcopy(inputs["img"])
+        self.msg_list = []
         self.image_ = deepcopy(inputs["img"])
         self.bboxes = inputs["person_tracks"]
         count = self._count_people()
         if self.show_bus_stop_zone:
             self._draw_rectangle([np.array(self.bus_stop_zone)[[0, 2], :].ravel()])
-        text = f"{count}"
-        self.Publisher.publish(text)
+        # Create messages
+        text = String()
+        text.data = f"{count}"
+        self.msg_list.append(text)
+        if self.publish_footage:
+            self.msg_list.append(self.br.cv2_to_imgmsg(self.image_))
+        # Publish messages
+        self.Publisher.publish(self.msg_list)
+        # Make sure to stop the ROS node when the pipeline ends
         if inputs["pipeline_end"]:
             self.Publisher.shutdown()
-        outputs = {}
-        return outputs
+
+        return {}
 
     def _count_people(self):
         count = 0

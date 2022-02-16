@@ -18,8 +18,6 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [
-            # "talker = ros_communication.publisher_member_function:main"
-        ],
+        "console_scripts": ["listener = ros_communication.person_count_sub:main"],
     },
 )
