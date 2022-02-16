@@ -18,6 +18,8 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["talker = py_pubsub.publisher_member_function:main"],
+        "console_scripts": [
+            # "talker = ros_communication.publisher_member_function:main"
+        ],
     },
 )
