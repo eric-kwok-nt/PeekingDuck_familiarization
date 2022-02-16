@@ -1,0 +1,18 @@
+version: "3"
+services:
+  jupyterlab:
+    image: xholyspirit/ros:v1
+    environment:
+      - DISPLAY=${DISPLAY}
+    network_mode: host
+    volumes:
+      - <your_directory>:/home/chamois/work
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    restart: unless-stopped
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]

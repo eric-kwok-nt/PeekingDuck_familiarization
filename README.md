@@ -5,6 +5,8 @@ This mini project attempts to test out the Human-Pose Estimation and Object Dete
 1. Dab Detection using pose detection models from PeekingDuck
 2. Counting of number of passengers boarded in each bus in a recorded video using object detection from PeekingDuck and [SORT](https://github.com/alexgoft/SORT_OpenCV_Trackers) or [DeepSort](https://github.com/nwojke/deep_sort) tracking library
 
+A small extension has also been added to this library to test out the [ROS2 Galactic](https://docs.ros.org/en/galactic/index.html) integration with PeekingDuck framework. In this extension, a small feature has been added ── _counting of number of people at the bus stop using the same footage as use case 2_. (Refer to Section 5) 
+
 ### 1.1 Dab Detection example using HRNet + YOLOv4
 ![An example for dab detection](./images/dab_detection.gif)
 
@@ -23,11 +25,13 @@ There are several assumptions to this problem:
     ├── README.md
     ├── config                    -> Contains yaml config files for various experiments
     │   ├── dab_recoginition      
-    │   └── passenger_counting     
+    │   └── passenger_counting
+    ├── dockerfiles               -> Contains docker image for ROS experimentation    
     ├── dab_detection_demo.ipynb  -> Notebook for dab recognition demo
     ├── data                      -> To contain input or output data. Included in gitignore.
     ├── environment.yml
     ├── images                    -> images for README file
+    ├── requirements.txt
     ├── runner.py                 -> Python script for running passenger counting
     └── src
         ├── custom_nodes
@@ -41,7 +45,8 @@ There are several assumptions to this problem:
         │   |   └── utils         -> Contains utility files for drawing on image and for tracking
         │   ├── draw              -> Custom draw node
         │   └── output            -> Custom csv writer node
-        └── data                  -> Contains yaml config files for recording videos for dab recognition, and a script to convert video file format from mkv to mp4 format
+        ├── data                  -> Contains yaml config files for recording videos for dab recognition, and a script to convert video file format from mkv to mp4 format
+        └── ros_communication     -> Contains ROS subscribers for publishing nodes.
 --------
 
 ## 3. Usage
@@ -205,10 +210,52 @@ A CSV file with the number of passengers boarded for each bus is saved every tim
 
 The recorded time is the time when the bus was first captured by the detection model.
 
-## 5. License
+## 5. ROS2 Experimentation (Extension)
+ROS2 Publisher and Subscriber have been added. The publisher is part of the dabble node in the PeekingDuck framework under ```src\custom_nodes\dabble\bus_stop_count_pub.py``` It publishes the following:
+1. Number of person at the predefined zone (bus stop) at any given point in time
+2. Video frames with the zone (bus stop) bounding box being drawn.
+
+The subscriber will subscribe to the String message and print out in the command line while the received image will be displayed in a separate window
+### 5.1 How to run
+1. Either [install](https://docs.ros.org/en/galactic/Installation.html) the ROS Galactic environment to your computer or use a [prebuilt image](https://hub.docker.com/repository/docker/xholyspirit/ros). It is recommended to run the container using a docker-compose file. A demo docker-compose file has been added in ```dockerfiles/docker-compose-demo.yaml```. **Make sure to edit line 9 to bind your local volume to the container's volume**
+2. Clone this repo.
+3. At the default environment, install Python OpenCV.
+```bash
+python3 -m pip install opencv-python
+```
+The ROS subscriber node will need this library and the reason for installing in the default environment is because the ROS subscriber node uses the system interpreter, and not from the virtual environment's. 
+
+4. At the root of this project directory, issue the following command to create a virtual environment.
+```bash
+virtualenv -p python3 ./venv
+source ./venv/bin/activate # Make a virtual env and activate it
+touch ./venv/COLCON_IGNORE # Make sure that colcon doesn’t try to build the venv
+pip install -r requirements.txt # install the necessary requirements for the peekingduck nodes
+```
+5. Build the ROS2 packages
+```bash
+rosdep install -i --from-path src --rosdistro galactic -y
+colcon build
+. install/setup.bash
+```
+
+6. Issue the following command to run the PeekingDuck's nodes
+```bash
+python runner.py
+```
+
+7. Open a separate terminal, and run the ROS2 subscriber node
+```bash
+ros2 run ros_communication listener
+```
+Once the subscriber receives information from the publisher, it will show the number of people at the bus stop in the CLI and a footage with the bus stop bounding box will be displayed.
+
+Note: The configurations for the PeekingDuck's publishing node ```bus_stop_count_pub``` can be changed in the yaml file: ```src/custom_nodes/configs/dabble/bus_stop_count_pub.yml```. 
+
+## 6. License
 The PeekingDuck library is under the open source [Apache License 2.0](https://github.com/aimakerspace/PeekingDuck/blob/dev/LICENSE) while the DeepSORT library is under the [GPL-3.0 License](https://github.com/nwojke/deep_sort/blob/master/LICENSE) 
-## 6. Author and Acknowledgements
+## 7. Author and Acknowledgements
 **Author**
 * [Eric Kwok](https://github.com/eric-kwok-nt)
 
-This mini-project was created using [PeekingDuck](https://github.com/aimakerspace/PeekingDuck), [SORT_OpenCV_Trackers](https://github.com/alexgoft/SORT_OpenCV_Trackers) and [DeepSORT](https://github.com/nwojke/deep_sort) tracker libraries.
+This mini-project was created using [PeekingDuck](https://github.com/aimakerspace/PeekingDuck), [SORT_OpenCV_Trackers](https://github.com/alexgoft/SORT_OpenCV_Trackers), [DeepSORT](https://github.com/nwojke/deep_sort) tracker libraries and experimented using the [ROS2 Galactic](https://docs.ros.org/en/galactic/index.html) framework.

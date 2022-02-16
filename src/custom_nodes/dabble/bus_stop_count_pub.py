@@ -16,7 +16,8 @@ from cv_bridge import CvBridge
 
 
 class Node(AbstractNode):
-    """This is a template class of how to write a node for PeekingDuck.
+    """This Node counts the number of people at the pre-defined bus stop bounding box
+    and publishes ROS String and Image messages onto the ROS2 topic
 
     Args:
         config (:obj:`Dict[str, Any]` | :obj:`None`): Node configuration.
@@ -39,13 +40,12 @@ class Node(AbstractNode):
         self.msg_list = []
 
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
-        """This node does ___.
-
+        """
         Args:
-            inputs (dict): Dictionary with keys "__", "__".
+            inputs (dict): Dictionary with keys "img", "person_tracks", "pipeline_end".
 
         Returns:
-            outputs (dict): Dictionary with keys "__".
+            outputs (dict): {}.
         """
         self.msg_list = []
         self.image_ = deepcopy(inputs["img"])
