@@ -41,8 +41,8 @@ class Node(AbstractNode):
     def run(self, inputs: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         """
         Args:
-            inputs (dict): 
-                - "img"   
+            inputs (dict):
+                - "img"
                 - "bus_tracks"
                 - "person_tracks"
                 - "bus_ids"
@@ -52,7 +52,7 @@ class Node(AbstractNode):
                 - "pipeline_end"
 
         Returns:
-            outputs (dict): 
+            outputs (dict):
                 - "df_records"
                 - "draw_pipeline"
                 - "write_now"
@@ -113,6 +113,7 @@ class Node(AbstractNode):
                         offset=self.bus_tracker["boundary_offset"],
                         image=self.image_,
                         draw_door=self.bus_tracker["draw_boundary"],
+                        draw_pipeline=self.draw_pipeline,
                     )
                 else:
                     text = "moving"
@@ -176,8 +177,7 @@ class Node(AbstractNode):
         self.person_dict = person_dict
 
     def _count_passenger(self):
-        """Count the number of passengers based on the heuristics
-        """
+        """Count the number of passengers based on the heuristics"""
         img_rows, img_cols, _ = self.image_.shape
         for _, bus_obj in self.bus_dict.items():
             if bus_obj.stationary:
@@ -208,8 +208,7 @@ class Node(AbstractNode):
                         bus_obj.passengers.add(person_obj)
 
     def save_data(self):
-        """Saves the number of passengers in each bus, the timing in the video when the bus appears to a csv file
-        """
+        """Saves the number of passengers in each bus, the timing in the video when the bus appears to a csv file"""
         self.logger.info("Saving Number of passengers to DataFrame...")
         records_to_save = defaultdict(list)
         indices = []

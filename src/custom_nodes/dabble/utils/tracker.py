@@ -147,14 +147,15 @@ class Bus(Tracked_Obj):
         return self.stationary
 
     def door_line(
-        self, offset: float, image: np.ndarray, draw_door=False,
+        self, offset: float, image: np.ndarray, draw_door=False, draw_pipeline=[]
     ) -> None:
-        """Creates the virtual door line and optionally draws it on the image. 
+        """Creates the virtual door line and optionally draws it on the image.
 
         Args:
             offset (float): How much offset as a fraction of the width of bus bbox
             image (np.ndarray): Image to be drawn on
             draw_door (bool, optional): Whether to draw the virtual door line on image. Defaults to False.
+            draw_pipeline (list, optional): A list to be appended for the image drawing operation in the custom_draw node.
         """
         img_rows, img_cols, _ = image.shape
         offset *= self.width  # Assume door is vertically straight on the right side
@@ -168,11 +169,12 @@ class Bus(Tracked_Obj):
 
         if draw_door:
             rescaled_tracks = bboxes_rescaling([(x, y1, x, y2)], image)[0]
-            cv2.line(
-                image,
-                (rescaled_tracks[0], rescaled_tracks[1]),
-                (rescaled_tracks[2], rescaled_tracks[3]),
-                color=[255, 255, 255],
-                thickness=2,
-            )
+            draw_door_kwargs = {
+                "img": image,
+                "pt1": (rescaled_tracks[0], rescaled_tracks[1]),
+                "pt2": (rescaled_tracks[2], rescaled_tracks[3]),
+                "color": [255, 255, 255],
+                "thickness": 2,
+            }
+            draw_pipeline.append((cv2.line, draw_door_kwargs))
         self.bus_door = (x, (y1, y2))
