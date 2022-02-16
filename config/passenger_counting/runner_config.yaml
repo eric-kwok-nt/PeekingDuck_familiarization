@@ -10,6 +10,8 @@ model.yolo:
   yolo_iou_threshold: 0.5
   yolo_score_threshold: 0.4
 
+zone_counting: True # Whether to count the number of people at the bus stop area
+
 record_to_csv: False # Whether to record the number of passengers in a csv file
 output_to_screen: True # To get the output to the screen or save it as a video
 

@@ -1,14 +1,19 @@
 import argparse
 import logging
+import numpy as np
 from omegaconf import OmegaConf
 from omegaconf.errors import ConfigAttributeError, ConfigKeyError
 from peekingduck.runner import Runner
 from peekingduck.pipeline.nodes.input import recorded
 from peekingduck.pipeline.nodes.model import yolo
-from peekingduck.pipeline.nodes.dabble import fps, bbox_to_btm_midpoint
+from peekingduck.pipeline.nodes.dabble import fps
 from peekingduck.pipeline.nodes.draw import bbox, tag
 from peekingduck.pipeline.nodes.output import media_writer, screen
-from src.custom_nodes.dabble import person_bus_tracker, passenger_counting
+from src.custom_nodes.dabble import (
+    person_bus_tracker,
+    passenger_counting,
+    bus_stop_count_pub,
+)
 from src.custom_nodes.draw import custom_draw
 from src.custom_nodes.output import record_df_to_csv
 import pdb
@@ -38,7 +43,8 @@ def main(args) -> None:
     )
     node_list.append(person_bus_tracker.Node())
     node_list.append(passenger_counting.Node())
-    # node_list.append(bbox_to_btm_midpoint.Node())
+    if conf.zone_counting:
+        node_list.append(bus_stop_count_pub.Node())
     node_list.append(fps.Node())
     node_list.append(custom_draw.Node())
     node_list.append(bbox.Node())

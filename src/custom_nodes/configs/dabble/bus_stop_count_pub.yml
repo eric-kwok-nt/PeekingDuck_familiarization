@@ -1,0 +1,6 @@
+input: ["img", "person_tracks", "pipeline_end"]
+output: ["none"]
+
+bus_stop_zone: [[1216, 290], [1216, 717], [1480, 717], [1480, 290]]
+publish_footage: True
+show_bus_stop_zone: True
