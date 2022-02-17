@@ -69,6 +69,7 @@ class Node(AbstractNode):
             self._update_bus()
             self._update_person()
             self._count_passenger()
+            # To indicate number of passengers on the respective bus
             if (len(self.bus_dict) != 0) and (self.indicate_num_passengers):
                 for bus_id, bus in self.bus_dict.items():
                     num_passengers = len(bus.passengers)

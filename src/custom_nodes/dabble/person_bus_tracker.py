@@ -25,9 +25,11 @@ class Node(AbstractNode):
     def __init__(self, config: Dict[str, Any] = None, **kwargs: Any) -> None:
         node_path = os.path.join(
             os.getcwd(), "src/custom_nodes/configs/dabble.person_bus_tracker"
-        )
+        ) # Use pathlib instead
         super().__init__(config, node_path=node_path, **kwargs)
         # super().__init__(config, node_path=__name__, **kwargs)
+        # Instantiate the respective tracker, depending on whether it is SORT
+        # or DeepSORT
         if not self.deep_sort:
             self.mot_person_tracker = Sort(
                 max_age=self.sort_person_tracker["DEFAULT_MAX_AGE"],
